@@ -1,0 +1,14 @@
+Guía de campo — LITOLOGÍA · ROCA VOLCÁNICA / LAVA
+==================================================
+Escriba un dato por renglón como "Etiqueta: valor".
+Los varios valores de un mismo campo se separan entre sí con ";".
+Los campos A (clasificación) y B (medidas) se eligen en el formulario, no van aquí.
+
+DESCRIPCION LITOLOGIA: roca de color gris verdoso, grano fino, masiva
+COMPOSICION MINERAL DETALLE: fenocristales de plagioclasa y olivino
+FENOCRISTALES DETALLE: plagioclasas de 2 mm, euhédricas, en hábito glomeroporfírico
+MATRIZ DETALLE: matriz afanítica, intergranular, con algo de vidrio
+RELACION LITOLOGIA ESTRUCTURA: cuerpos de lava con disyunción columnar local
+OBSERVACION: presenta amígdalas rellenas de sílice; leve oxidación superficial
+
+Guía instalable (límites): pegue arriba y ajuste lo que corresponda al afloramiento.

@@ -1,0 +1,13 @@
+Guía de campo — LITOLOGÍA · SEDIMENTARIA CLÁSTICA / ARENISCA
+=============================================================
+Escriba un dato por renglón como "Etiqueta: valor".
+Los varios valores de un mismo campo se separan entre sí con ";".
+Los campos A (clasificación) y B (medidas) se eligen en el formulario, no van aquí.
+
+DESCRIPCION LITOLOGIA: arenisca de grano medio, color beige, bien estratificada
+LITOLOGIA CLASTOS DETALLE: clastos de cuarzo y líticos volcánicos, subredondeados
+COMPOSICION MINERAL DETALLE: clastos de cuarzo, feldespato y micas
+RELACION LITOLOGIA ESTRUCTURA: estratificación entrecruzada en sets de 30 cm
+OBSERVACION: base erosiva con intraclastos y rip-up clasts de lutita
+
+Guía instalable (límites): pegue arriba y ajuste lo que corresponda al afloramiento.

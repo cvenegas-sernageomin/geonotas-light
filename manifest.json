@@ -1,0 +1,25 @@
+{
+  "name": "GeoTerreno Light — Captura simplificada",
+  "short_name": "GeoTerreno Light",
+  "description": "Libreta digital de geología básica en terreno, offline (captura simplificada A/B/C, mapa satelital y export CSV/KMZ/GeoPackage/GDB/PDF).",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#1f6f4f",
+  "theme_color": "#1f6f4f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
