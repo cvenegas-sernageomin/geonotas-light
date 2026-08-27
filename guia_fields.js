@@ -7,12 +7,12 @@ var GUIA_FIELDS = {
   {
    "campo": "ID_PROYECTO",
    "etiqueta": "ID PROYECTO",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "NOMBRE_PROYECTO",
    "etiqueta": "NOMBRE PROYECTO",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "JEFE_PROYECTO",
@@ -34,12 +34,12 @@ var GUIA_FIELDS = {
   {
    "campo": "ID_PUNTO_CONTROL",
    "etiqueta": "ID PUNTO CONTROL",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "GEOLOGO",
    "etiqueta": "GEOLOGO",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "Coordenadas Geográficas Decimales_Lat",
@@ -59,7 +59,7 @@ var GUIA_FIELDS = {
   {
    "campo": "PROYECCION",
    "etiqueta": "PROYECCION",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "FUENTE_COORDENADAS",
@@ -74,12 +74,12 @@ var GUIA_FIELDS = {
   {
    "campo": "METODO_UBICACION",
    "etiqueta": "METODO UBICACION",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "NOMBRE_LOCALIDAD",
    "etiqueta": "NOMBRE LOCALIDAD",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "CONTEXTO_GEOMORFOLOGICO",
@@ -126,12 +126,12 @@ var GUIA_FIELDS = {
   {
    "campo": "COLOR_FRESCO",
    "etiqueta": "COLOR FRESCO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "COLOR_METEORIZADO",
    "etiqueta": "COLOR METEORIZADO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "GRANULOMETRIA",
@@ -156,17 +156,17 @@ var GUIA_FIELDS = {
   {
    "campo": "GRADO_CONFIANZA_LITO",
    "etiqueta": "GRADO CONFIANZA LITO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "TIPO_ALTERACION_LITO",
    "etiqueta": "TIPO ALTERACION LITO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "INTENSIDAD_ALTERACION",
    "etiqueta": "INTENSIDAD ALTERACION",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "DISTRIBUCION_ALTERACION",
@@ -191,17 +191,17 @@ var GUIA_FIELDS = {
   {
    "campo": "SELECCION",
    "etiqueta": "SELECCION",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "REDONDEAMIENTO",
    "etiqueta": "REDONDEAMIENTO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "ESFERICIDAD",
    "etiqueta": "ESFERICIDAD",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "CLASTOS_TAM_MAX_CM",
@@ -211,12 +211,12 @@ var GUIA_FIELDS = {
   {
    "campo": "COMPOSICION_CLASTICA",
    "etiqueta": "COMPOSICION CLASTICA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "LITOLOGIA_CLASTOS",
    "etiqueta": "LITOLOGIA CLASTOS",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "LITOLOGIA_CLASTOS_DETALLE",
@@ -226,22 +226,22 @@ var GUIA_FIELDS = {
   {
    "campo": "FABRICA_CLASTOS",
    "etiqueta": "FABRICA CLASTOS",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "COMPOSICION_CLASTICA_MATRIZ",
    "etiqueta": "COMPOSICION CLASTICA MATRIZ",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "CEMENTO",
    "etiqueta": "CEMENTO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "COMPOSICION_MINERAL_PRINCIPAL",
    "etiqueta": "COMPOSICION MINERAL PRINCIPAL",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "COMPOSICION_MINERAL_DETALLE",
@@ -251,7 +251,7 @@ var GUIA_FIELDS = {
   {
    "campo": "COMPOSICION_MINERAL_INTRUSIVA",
    "etiqueta": "COMPOSICION MINERAL INTRUSIVA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "COMPOSICION_MINERAL_INTRUSIVA_DETALLE",
@@ -261,7 +261,7 @@ var GUIA_FIELDS = {
   {
    "campo": "FENOCRISTALES_ESPECIE",
    "etiqueta": "FENOCRISTALES ESPECIE",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "FENOCRISTALES_DETALLE",
@@ -271,27 +271,27 @@ var GUIA_FIELDS = {
   {
    "campo": "MASA_FUNDAMENTAL",
    "etiqueta": "MASA FUNDAMENTAL",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "TEXTURA_DUNHAM",
    "etiqueta": "TEXTURA DUNHAM",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "SOLDADURA",
    "etiqueta": "SOLDADURA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "GRADO_CONSOLIDACION",
    "etiqueta": "GRADO CONSOLIDACION",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "CRISTALES_ESPECIE",
    "etiqueta": "CRISTALES ESPECIE",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "CRISTALES_DETALLE",
@@ -306,7 +306,7 @@ var GUIA_FIELDS = {
   {
    "campo": "TIPO_LITICOS",
    "etiqueta": "TIPO LITICOS",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "TIPO_LITICOS_DETALLE",
@@ -326,12 +326,12 @@ var GUIA_FIELDS = {
   {
    "campo": "MATRIZ_COMPOSICION",
    "etiqueta": "MATRIZ COMPOSICION",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "TIPO_FRAGMENTO_VITREO",
    "etiqueta": "TIPO FRAGMENTO VITREO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "TIPO_FRAGMENTO_VITREO_DETALLE",
@@ -351,7 +351,7 @@ var GUIA_FIELDS = {
   {
    "campo": "CRISTALINIDAD",
    "etiqueta": "CRISTALINIDAD",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "NOMBRE_ROCA",
@@ -373,7 +373,7 @@ var GUIA_FIELDS = {
   {
    "campo": "TIPO_FALLA",
    "etiqueta": "TIPO FALLA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "AZIMUT",
@@ -403,7 +403,7 @@ var GUIA_FIELDS = {
   {
    "campo": "GRADO_CONFIANZA_ESTRUCTURA",
    "etiqueta": "GRADO CONFIANZA ESTRUCTURA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "DESCRIPCION_ESTRUCTURA",
@@ -415,7 +415,7 @@ var GUIA_FIELDS = {
   {
    "campo": "TIPO_CONTACTO",
    "etiqueta": "TIPO CONTACTO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "UNIDAD_TECHO",
@@ -430,22 +430,22 @@ var GUIA_FIELDS = {
   {
    "campo": "GRADO_CONFIANZA_CONTACTO",
    "etiqueta": "GRADO CONFIANZA CONTACTO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "EXPOSICION_CONTACTO",
    "etiqueta": "EXPOSICION CONTACTO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "RUMBO_CONTACTO",
    "etiqueta": "RUMBO CONTACTO",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "MANTEO_CONTACTO",
    "etiqueta": "MANTEO CONTACTO",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "DESCRIPCION_CONTACTO",
@@ -457,7 +457,7 @@ var GUIA_FIELDS = {
   {
    "campo": "ID_MUESTRA",
    "etiqueta": "ID MUESTRA",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "ID_LITOLOGIA",
@@ -467,7 +467,7 @@ var GUIA_FIELDS = {
   {
    "campo": "TIPO_MUESTRA",
    "etiqueta": "TIPO MUESTRA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "DESCRIPCION_MUESTRA",
@@ -477,7 +477,7 @@ var GUIA_FIELDS = {
   {
    "campo": "PROPOSITO_ANALISIS",
    "etiqueta": "PROPOSITO ANALISIS",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "PESO",
@@ -492,14 +492,14 @@ var GUIA_FIELDS = {
   {
    "campo": "ORIENTACION_MUESTRA",
    "etiqueta": "ORIENTACION MUESTRA",
-   "cat": "B"
+   "cat": "C"
   }
  ],
  "foto": [
   {
    "campo": "ORIENTACION_FOTO",
    "etiqueta": "ORIENTACION FOTO",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "ID_LITOLOGIA",
@@ -550,7 +550,7 @@ var GUIA_FIELDS = {
   {
    "campo": "GRADO_EXPOSICION_AFLORAMIENTO",
    "etiqueta": "GRADO EXPOSICION AFLORAMIENTO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "CLASE_AFLORAMIENTO",
@@ -575,62 +575,62 @@ var GUIA_FIELDS = {
   {
    "campo": "ARREGLO_ESTRATOS",
    "etiqueta": "ARREGLO ESTRATOS",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "GRADACION_INTERNA",
    "etiqueta": "GRADACION INTERNA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "ESPESOR_MIN_CM",
    "etiqueta": "ESPESOR MIN (cm)",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "ESPESOR_MAX_CM",
    "etiqueta": "ESPESOR MAX (cm)",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "ESPESOR_DEPOSITO_MIN_M",
    "etiqueta": "ESPESOR DEPOSITO MIN (m)",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "ESPESOR_DEPOSITO_MAX_M",
    "etiqueta": "ESPESOR DEPOSITO MAX (m)",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "GEOMETRIA_CUERPO",
    "etiqueta": "GEOMETRIA CUERPO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "EXTENSION_LATERAL",
    "etiqueta": "EXTENSION LATERAL",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "TIPO_LIMITE_INFERIOR",
    "etiqueta": "TIPO LIMITE INFERIOR",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "GRADO_METEORIZACION",
    "etiqueta": "GRADO METEORIZACION",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "GRADO_FRACTURAMIENTO",
    "etiqueta": "GRADO FRACTURAMIENTO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "FABRICA_GRAVOSA",
    "etiqueta": "FABRICA GRAVOSA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "NOTA_AFLORAMIENTO",
@@ -642,7 +642,7 @@ var GUIA_FIELDS = {
   {
    "campo": "GEOLOGO",
    "etiqueta": "GEOLOGO",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "Coordenadas Geográficas Decimales_Lat",
@@ -662,7 +662,7 @@ var GUIA_FIELDS = {
   {
    "campo": "PROYECCION",
    "etiqueta": "PROYECCION",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "FUENTE_COORDENADAS",
@@ -677,12 +677,12 @@ var GUIA_FIELDS = {
   {
    "campo": "METODO_UBICACION",
    "etiqueta": "METODO UBICACION",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "NOMBRE_LOCALIDAD",
    "etiqueta": "NOMBRE LOCALIDAD",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "CONTEXTO_GEOMORFOLOGICO",
@@ -729,7 +729,7 @@ var GUIA_FIELDS = {
   {
    "campo": "CERTEZA_LINEA",
    "etiqueta": "CERTEZA LINEA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "UNIDAD_TECHO_LINEA",
@@ -771,7 +771,7 @@ var GUIA_FIELDS = {
   {
    "campo": "CERTEZA_LINEA",
    "etiqueta": "CERTEZA LINEA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "UNIDAD_TECHO_LINEA",
@@ -798,7 +798,7 @@ var GUIA_FIELDS = {
   {
    "campo": "CATEGORIA_NOTA",
    "etiqueta": "CATEGORIA NOTA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "TEXTO",
@@ -808,17 +808,17 @@ var GUIA_FIELDS = {
   {
    "campo": "GEOLOGO",
    "etiqueta": "GEOLOGO",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "LATITUD",
    "etiqueta": "LATITUD",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "LONGITUD",
    "etiqueta": "LONGITUD",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "FECHA",

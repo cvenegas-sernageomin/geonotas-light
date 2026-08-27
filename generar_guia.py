@@ -40,6 +40,55 @@ STORES_FORMA = list(STORE2TBL.keys()) + ['linea', 'nota']
 # Claves de negocio que el usuario SÍ nombra (visibles/editables); el resto de ids se ocultan.
 NOMBRABLES = {'ID_PROYECTO', 'ID_PUNTO_CONTROL', 'ID_MUESTRA'}
 
+# Campos de IDENTIDAD / clasificación que siguen como widget (no van al textarea de descripción).
+# A) clasificación = cadena de cascadas (hijos + padres) + FK especiales + identidad/contexto esencial.
+IDENTIDAD = {
+    'NOMBRE_PROYECTO', 'ID_PROYECTO', 'ID_PUNTO_CONTROL', 'ID_MUESTRA', 'GEOLOGO',
+    'NOMBRE_LOCALIDAD', 'ESCALA_TRABAJO', 'PROYECCION', 'FUENTE_COORDENADAS',
+    'METODO_UBICACION', 'PRECISION_GPS', 'CONTEXTO_GEOMORFOLOGICO', 'UNIDAD_GEOLOGICA',
+    # Raíces de clasificación que estrechan NOMBRE_ROCA (ROCAS_VOLCANICAS/filtrarNombreRocaVolcanica):
+    'TIPO_ROCA', 'TIPO_VOLCANICA', 'TIPO_DEPOSITO',
+}
+FK_ESPECIALES = {'ID_LITOLOGIA', 'PUNTOS_APOYO'}
+# B) medidas VITALES que se ingresan como número/fecha/hora (el resto de números → textarea C).
+B_VITAL = re.compile(
+    r'(?i)^(?:Coordenadas Geográficas Decimales_(?:Lat|Long)|COTA|RUMBO|BUZAMIENTO|AZIMUT|'
+    r'MANTEO_BUZAMIENTO|TREND|PLUNGE|ESPESOR_|LITICOS_PCT|POMEZ_PCT|CRISTALES_PCT|MATRIZ_PCT|'
+    r'CLASTOS_TAM_MAX_CM|PESO|VOLUMEN|FECHA|HORA)$'
+)
+
+
+def es_clasificacion(campo, dominios):
+    """Un campo queda como widget de CLASIFICACIÓN (A) si:
+    - es un campo de identidad/contexto esencial,
+    - es un FK especial (ID_LITOLOGIA, PUNTOS_APOYO),
+    - su dominio es una categoría (cascada → es hijo de una cascada), o
+    - su dominio es el PARENT de alguna cascada (TIPO_ROCA, TIPO_ESTRUCTURA, CLASE_LINEA...)."""
+    n = campo.get('nombre')
+    dom = campo.get('dominio')
+    if n in IDENTIDAD or n in FK_ESPECIALES:
+        return True
+    if not dom:
+        return False
+    d = dominios.get(dom)
+    if d and d.get('tipo') == 'cascada':
+        return True
+    # es padre de alguna cascada? (usado para repoblar hijos en el form)
+    for d2 in dominios.values():
+        if d2.get('tipo') == 'cascada' and d2.get('padre') == dom:
+            return True
+    return False
+
+
+def categoria(campo, dominios):
+    """A=clasificación/identidad (widget) · B=medida vital (widget num/fecha/hora) · C=descripción (texto)."""
+    if es_clasificacion(campo, dominios):
+        return 'A'
+    n = campo.get('nombre')
+    if B_VITAL.match(n or ''):
+        return 'B'
+    return 'C'
+
 NUM_RE = re.compile(r'COTA|AZIMUT|MANTEO|BUZAMIENTO|PESO|VOLUMEN|RUMBO|ORIENTACION|TREND|PLUNGE|ESPESOR|_PCT$|_CM$|_MM$')
 TXT_RE = re.compile(r'DESCRIPCION|OBSERVACION|COMENTARIO|RELACION_LITOLOGIA|DISTRIBUCION|TEXTO|PROSA')
 
@@ -86,12 +135,6 @@ def tipo_widget(campo):
     return 'text'
 
 
-def categoria(widget):
-    if widget == 'select':
-        return 'A'
-    if widget in ('number', 'date', 'time'):
-        return 'B'
-    return 'C'
 
 
 def hide_field(store, n, pk):
@@ -123,11 +166,10 @@ def main():
             n = campo.get('nombre')
             if hide_field(store, n, pk):
                 continue
-            w = tipo_widget(campo)
             fields.append({
                 'campo': n,
                 'etiqueta': etiqueta_campo(n),
-                'cat': categoria(w),
+                'cat': categoria(campo, modelo.get('dominios', {})),
             })
         # Panel Litología: NOMBRE_ROCA se muestra al final (mismo criterio que el index.html).
         if store == 'litologia':
