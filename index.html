@@ -3343,7 +3343,7 @@ const MODELO = {
 </script>
 <script>
 "use strict";
-const APP_VER = 'light-6';   // se muestra en Proyectos; subir junto con el cache del SW
+const APP_VER = 'light-7';   // se muestra en Proyectos; subir junto con el cache del SW
 // ============================ Utilidades ============================
 const $ = s => document.querySelector(s);
 const el = (t,a={},...c)=>{const e=document.createElement(t);for(const k in a){if(k==='class')e.className=a[k];else if(k==='html')e.innerHTML=a[k];else if(k.startsWith('on'))e.addEventListener(k.slice(2),a[k]);else e.setAttribute(k,a[k]);}c.flat().forEach(x=>e.append(x&&x.nodeType?x:document.createTextNode(x==null?'':x)));return e;};
@@ -4405,10 +4405,18 @@ function construirGuia(cCfg){
   return 'Campos: '+lista+'. Escriba cada dato como "Etiqueta: valor" (uno por renglón). '
     +'Los varios valores de un mismo campo se separan entre sí con ";".';
 }
-// Panel Litología simplificado: en vez de la lista mecánica de los ~48 campos que colapsó
-// aquí (mineralogía, textura, alteración, clastos...), una ayuda-memoria de qué anotar SEGÚN
-// el tipo de roca elegido -- lo que un geólogo recordaría igual, pero sin tener que teclear
-// ninguna etiqueta exacta primero (el parser de la guía las reconoce igual si se escriben).
+// Paneles simplificados al máximo (litología, afloramiento): en vez de la lista mecánica de
+// etiquetas que colapsó ahí, una ayuda-memoria de qué anotar SEGÚN la clasificación elegida --
+// lo que un geólogo recordaría igual, pero sin tener que teclear ninguna etiqueta exacta
+// primero (el parser de la guía las reconoce igual si se escriben). Genérico por diseño: cada
+// panel dinámico solo aporta su mapa {valor de la clave -> ayuda} y el nombre de esa clave;
+// ver GUIAS_DINAMICAS más abajo, donde se conecta al store.
+function construirGuiaDinamica(mapaAyuda, valorClave, invitacion){
+  const ayuda=mapaAyuda[valorClave];
+  const base = ayuda ? 'Anote lo que corresponda de: '+ayuda : invitacion;
+  return base+' Escriba cada dato como "Etiqueta: valor" (uno por renglón); los varios valores '
+    +'de un mismo campo se separan entre sí con ";".';
+}
 const AYUDA_MEMORIA_LITOLOGIA = {
   'Volcánica': 'Color (fresco/meteorizado), textura y estructura, fenocristales (especie, %, '
     +'tamaño) y masa fundamental, grado y tipo de alteración. Si es piroclástica: granulometría '
@@ -4423,14 +4431,40 @@ const AYUDA_MEMORIA_LITOLOGIA = {
     +'espesor y geometría del depósito.',
 };
 function construirGuiaLitologia(tipoRoca){
-  const ayuda=AYUDA_MEMORIA_LITOLOGIA[tipoRoca];
-  const base = ayuda
-    ? 'Anote lo que corresponda de: '+ayuda
-    : 'Elija primero el Tipo de roca arriba: aquí aparece qué anotar según el tipo '
-      +'(color, textura, mineralogía, alteración, etc.).';
-  return base+' Escriba cada dato como "Etiqueta: valor" (uno por renglón); los varios valores '
-    +'de un mismo campo se separan entre sí con ";".';
+  return construirGuiaDinamica(AYUDA_MEMORIA_LITOLOGIA, tipoRoca,
+    'Elija primero el Tipo de roca arriba: aquí aparece qué anotar según el tipo '
+    +'(color, textura, mineralogía, alteración, etc.).');
 }
+// CLASE_AFLORAMIENTO acota además la lista de CARACTER_MESOSCOPICO (dominio en cascada), que
+// sigue siendo su propio widget -- esta ayuda-memoria es para todo lo demás (exposición,
+// espesor/geometría del cuerpo, meteorización, fracturamiento...), que aquí se colapsó igual
+// que en Litología.
+const AYUDA_MEMORIA_AFLORAMIENTO = {
+  'Sedimentario / estratificado': 'Grado de exposición, espesor de estratos/bancos (mín-máx) y su '
+    +'tendencia hacia el techo, gradación interna, geometría y extensión lateral del cuerpo, tipo '
+    +'de límite inferior, grado de meteorización; si es gravoso, fábrica/imbricación de clastos. '
+    +'Qué hay en el afloramiento: tipo/subtipo (litología simple, secuencia, contacto...).',
+  'Volcánico': 'Grado de exposición, geometría y extensión lateral del cuerpo, espesor del '
+    +'depósito, grado de meteorización y fracturamiento. Qué hay: tipo/subtipo de afloramiento '
+    +'(lava, roca piroclástica, contacto...).',
+  'Intrusivo': 'Grado de exposición, geometría del cuerpo, grado de fracturamiento y '
+    +'meteorización. Qué hay: tipo/subtipo de afloramiento (contacto intrusivo, mineralización...).',
+  'Metamórfico': 'Grado de exposición, geometría del cuerpo, grado de fracturamiento y '
+    +'meteorización. Qué hay: tipo/subtipo de afloramiento.',
+  'Roca de falla (tectonita)': 'Grado de exposición, geometría y extensión de la zona, grado de '
+    +'fracturamiento. Qué hay: tipo/subtipo de afloramiento estructural (falla normal, zona de '
+    +'cizalla, pliegue...).',
+};
+function construirGuiaAfloramiento(clase){
+  return construirGuiaDinamica(AYUDA_MEMORIA_AFLORAMIENTO, clase,
+    'Elija primero la Clase de afloramiento arriba: aquí aparece qué anotar según la clase '
+    +'(exposición, espesor/geometría del cuerpo, meteorización, fracturamiento, etc.).');
+}
+// store -> {campoClave: el campo A cuyo cambio dispara el recálculo, construir: función de arriba}
+const GUIAS_DINAMICAS = {
+  litologia: {campoClave:'TIPO_ROCA', construir:construirGuiaLitologia},
+  aflora: {campoClave:'CLASE_AFLORAMIENTO', construir:construirGuiaAfloramiento},
+};
 // Rellena el textarea con lo ya guardado: "Etiqueta: valor" por renglón (solo campos no vacíos).
 function textoGuiaDesdeReg(reg,cCfg){
   if(!cCfg)return '';
@@ -4616,10 +4650,13 @@ function formularioLight(store, reg, ctx){
   cont.append(rowWrap);
 
   // ---- C) Descripción: un textarea guiado por store (toda la parte textual) ----
-  // Litología usa una guía dinámica (ayuda-memoria por TIPO_ROCA) en vez de la lista fija de
-  // etiquetas: se recalcula cada vez que cambia TIPO_ROCA, ver el listener de cascadas abajo.
-  const esLito = store==='litologia';
-  const guiaActual = () => esLito ? construirGuiaLitologia(inputs['TIPO_ROCA']?inputs['TIPO_ROCA'].value:'') : construirGuia(cCfg);
+  // Litología y Afloramiento usan una guía dinámica (ayuda-memoria según su campo clave) en vez
+  // de la lista fija de etiquetas: se recalcula cada vez que cambia ese campo, ver el listener
+  // de cascadas abajo. GUIAS_DINAMICAS decide qué stores la usan.
+  const guiaDin = GUIAS_DINAMICAS[store];
+  const guiaActual = () => guiaDin
+    ? guiaDin.construir(inputs[guiaDin.campoClave] ? inputs[guiaDin.campoClave].value : '')
+    : construirGuia(cCfg);
   if(cCampos.length){
     const ccard=el('div',{class:'card'});
     ccard.append(el('h3',{class:'hsec'},'Descripción / texto'));
@@ -4757,7 +4794,7 @@ function formularioLight(store, reg, ctx){
     // Ayuda-memoria de Litología: se recalcula al elegir/cambiar TIPO_ROCA. Solo toca el
     // placeholder (texto gris de ejemplo), nunca cta.value -- no se pisa lo que el geólogo
     // ya escribió.
-    if(esLito && changed==='TIPO_ROCA' && cta) cta.placeholder=guiaActual();
+    if(guiaDin && changed===guiaDin.campoClave && cta) cta.placeholder=guiaActual();
     // dominio abierto "agregar nuevo"
     if(e.target.tagName==='SELECT' && e.target.value==='__add__'){
       const campo=cs.find(c=>c.nombre===e.target.name);

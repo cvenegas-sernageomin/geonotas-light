@@ -102,6 +102,14 @@ TXT_RE = re.compile(r'DESCRIPCION|OBSERVACION|COMENTARIO|RELACION_LITOLOGIA|DIST
 # estos campos escrita a mano ("Color fresco: gris"), asi que no se pierde nada del modelo.
 LITOLOGIA_WIDGET = {'TIPO_ROCA', 'NOMBRE_ROCA'}
 
+# 'aflora' se simplifica con la misma idea (2026-08-30): CLASE_AFLORAMIENTO define que arquitectura
+# se describe y CARACTER_MESOSCOPICO es esa arquitectura -- el mismo par tronco/hoja que TIPO_ROCA/
+# NOMBRE_ROCA. TIPO_AFLORAMIENTO/SUBTIPO_AFLORAMIENTO es una clasificacion complementaria propia
+# (no CDC, "que HAY en el afloramiento"), no la identidad primaria, asi que tambien se colapsa junto
+# con exposicion/espesor/geometria/meteorizacion/fracturamiento: todo eso va al campo libre, con
+# ayuda-memoria segun CLASE_AFLORAMIENTO (ver AYUDA_MEMORIA_AFLORAMIENTO en index.html).
+AFLORA_WIDGET = {'CLASE_AFLORAMIENTO', 'CARACTER_MESOSCOPICO'}
+
 # 'muestreo', al reves: la PWA light NO lo simplifica, replica exactamente la ficha Muestra de
 # la PWA completa (captura-terreno) -- cada campo es su propio widget, nada se colapsa al texto
 # guiado. A diferencia de litologia (con decenas de campos de detalle petrografico que aca no
@@ -184,6 +192,8 @@ def main():
                 continue
             cat = categoria(campo, modelo.get('dominios', {}))
             if store == 'litologia' and n not in LITOLOGIA_WIDGET:
+                cat = 'C'
+            elif store == 'aflora' and n not in AFLORA_WIDGET:
                 cat = 'C'
             elif store == 'muestreo' and n in MUESTREO_SIN_COLAPSAR and cat == 'C':
                 cat = 'B' if tipo_widget(campo) == 'number' else 'A'

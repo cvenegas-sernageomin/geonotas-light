@@ -565,12 +565,12 @@ var GUIA_FIELDS = {
   {
    "campo": "TIPO_AFLORAMIENTO",
    "etiqueta": "TIPO AFLORAMIENTO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "SUBTIPO_AFLORAMIENTO",
    "etiqueta": "SUBTIPO AFLORAMIENTO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "ARREGLO_ESTRATOS",
