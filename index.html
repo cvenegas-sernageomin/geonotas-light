@@ -15,6 +15,9 @@
 <script src="vendor/georaster-layer-for-leaflet.min.js"></script>
 <script src="vendor/jszip.js"></script>
 <script src="guia_fields.js"></script>
+<!-- Dictado por voz offline. El script es chico (~15 KB); lo pesado (el modelo Whisper, ~78 MB)
+     NO se baja al cargar la app: solo cuando el geólogo toca el micrófono y acepta descargarlo. -->
+<script src="vendor/voz/voz.js"></script>
 <style>
   /* ---- Paleta: cálida, natural (geología), suave a la vista + modo oscuro auto ---- */
   :root{
@@ -3343,7 +3346,7 @@ const MODELO = {
 </script>
 <script>
 "use strict";
-const APP_VER = 'light-7';   // se muestra en Proyectos; subir junto con el cache del SW
+const APP_VER = 'light-8';   // se muestra en Proyectos; subir junto con el cache del SW
 // ============================ Utilidades ============================
 const $ = s => document.querySelector(s);
 const el = (t,a={},...c)=>{const e=document.createElement(t);for(const k in a){if(k==='class')e.className=a[k];else if(k==='html')e.innerHTML=a[k];else if(k.startsWith('on'))e.addEventListener(k.slice(2),a[k]);else e.setAttribute(k,a[k]);}c.flat().forEach(x=>e.append(x&&x.nodeType?x:document.createTextNode(x==null?'':x)));return e;};
@@ -4465,25 +4468,48 @@ const GUIAS_DINAMICAS = {
   litologia: {campoClave:'TIPO_ROCA', construir:construirGuiaLitologia},
   aflora: {campoClave:'CLASE_AFLORAMIENTO', construir:construirGuiaAfloramiento},
 };
+// Campo de texto libre "natural" de cada panel: ahí cae todo lo que el geólogo escriba o DICTE
+// sin ponerle una etiqueta. Sin esto, cualquier renglón que no fuera "Etiqueta: valor" se perdía
+// en silencio al guardar — y dictar produce prosa corrida, no etiquetas. Es pérdida de datos
+// callada, la peor clase: en terreno no hay forma de notarla hasta que ya no se puede volver.
+// Se declara para TODOS los paneles con cuadro de texto, no solo los dos simplificados: el
+// descarte silencioso venía del parser genérico, así que existía en todas las fichas por igual.
+const CAMPO_LIBRE = {
+  litologia:'DESCRIPCION_LITOLOGIA', aflora:'NOTA_AFLORAMIENTO',
+  punto:'NOTA', punto_gabinete:'NOTA', nota:'TEXTO', linea:'NOTA', linea_gabinete:'NOTA',
+  estructural:'DESCRIPCION_ESTRUCTURA', contacto:'DESCRIPCION_CONTACTO',
+  geomorf:'DESCRIPCION_GEOMORFOLOGIA', foto:'COMENTARIO_FOTO', esquema:'OBSERVACION',
+  muestreo:'DESCRIPCION_MUESTRA',
+};
+
 // Rellena el textarea con lo ya guardado: "Etiqueta: valor" por renglón (solo campos no vacíos).
-function textoGuiaDesdeReg(reg,cCfg){
+// El campo libre se escribe SIN etiqueta y al final, para que la prosa vuelva tal como se dictó
+// y el ciclo guardar→reabrir→guardar no la vaya envolviendo en etiquetas.
+function textoGuiaDesdeReg(reg,cCfg,store){
   if(!cCfg)return '';
-  return cCfg.map(f=>{const v=reg[f.campo];return (v!=null&&v!=='')?f.etiqueta+': '+v:null;})
-    .filter(Boolean).join('\n');
+  const libre=CAMPO_LIBRE[store];
+  const lineas=cCfg.filter(f=>f.campo!==libre)
+    .map(f=>{const v=reg[f.campo];return (v!=null&&v!=='')?f.etiqueta+': '+v:null;}).filter(Boolean);
+  if(libre && reg[libre]) lineas.push(reg[libre]);
+  return lineas.join('\n');
 }
 // Parser determinista de la guia: texto -> campo->valor. `;` dentro de un valor = múltiple.
 // Si el campo tiene dominio, valida cada valor; el que no calza se conserva igual (con aviso).
-function parsearGuia(texto,cCfg,cCampos){
+// Lo que no calce con ninguna etiqueta conocida va al campo libre del panel (ver CAMPO_LIBRE).
+function parsearGuia(texto,cCfg,cCampos,store){
   const o={};
   if(!cCfg||!cCfg.length)return o;
   const mapa={};
   cCfg.forEach(f=>{mapa[normalizarEt(f.etiqueta)]=f.campo;mapa[normalizarEt(f.campo)]=f.campo;});
   const byCampo={};cCampos.forEach(c=>byCampo[c.nombre]=c);
+  const libre=CAMPO_LIBRE[store], sueltas=[];
   String(texto||'').split(/\r?\n/).forEach(linea=>{
+    if(!linea.trim())return;
     const m=linea.match(/^\s*([^:]+?)\s*:\s*(.*)$/);
-    if(!m)return;
-    const campo=mapa[normalizarEt(m[1].trim())];
-    if(!campo)return;
+    const campo=m?mapa[normalizarEt(m[1].trim())]:null;
+    // Sin etiqueta reconocible: es prosa. Se conserva entera (con sus dos puntos, si los tenía)
+    // en vez de tirarla.
+    if(!campo){ sueltas.push(linea.trim()); return; }
     const cd=byCampo[campo];
     const vals=String(m[2]).split(';').map(s=>s.trim()).filter(Boolean);
     if(!vals.length)return;
@@ -4498,6 +4524,12 @@ function parsearGuia(texto,cCfg,cCampos){
       o[campo]=(o[campo]?o[campo]+'; ':'')+vals.join('; ');
     }
   });
+  // El texto suelto se junta al final. Si el panel no declara campo libre no se inventa uno:
+  // se avisa, porque callarlo sería volver al bug que esto arregla.
+  if(sueltas.length){
+    if(libre) o[libre]=(o[libre]?o[libre]+' ':'')+sueltas.join(' ');
+    else avisoGuia('Hay texto sin etiqueta que no se puede guardar en esta ficha');
+  }
   return o;
 }
 
@@ -4665,8 +4697,17 @@ function formularioLight(store, reg, ctx){
     const btn=el('button',{class:'btn sec mini',type:'button',
       onclick:()=>{cta.value=guiaActual();}},'📋 Instalar guía');
     cta=el('textarea',{rows:9,class:'lightdesc',name:'__desc__',placeholder:guiaActual()});
-    cta.value=textoGuiaDesdeReg(reg,cCfg);
-    ccard.append(el('div',{class:'btnbar'},btn),hint,cta);
+    cta.value=textoGuiaDesdeReg(reg,cCfg,store);
+    const barra=el('div',{class:'btnbar'},btn);
+    // Botón de dictado. Va acá y no en un menú aparte porque este cuadro es EL campo de trabajo
+    // de Litología y Afloramiento; el micrófono tiene que estar donde se escribe. El módulo se
+    // encarga solo de pedir permiso, descargar el motor la primera vez, grabar e insertar.
+    if(window.VozTerreno) barra.append(VozTerreno.montarBoton(cta,{
+      clase:'btn sec mini',
+      aviso:toast,
+      onProgreso:p=>toast('Descargando motor de voz… '+Math.round(p.pct)+'%'),
+    }));
+    ccard.append(barra,hint,cta);
     cont.append(ccard);
   }
 
@@ -4808,7 +4849,7 @@ function formularioLight(store, reg, ctx){
 
   return {node:cont, getData(){const o={};for(const n in inputs){const i=inputs[n];
     o[n]= i._multi ? valorMultichips(i) : i.value;
-  } if(cCampos.length)Object.assign(o,parsearGuia(cta.value,cCfg,cCampos)); return o;}};
+  } if(cCampos.length)Object.assign(o,parsearGuia(cta.value,cCfg,cCampos,store)); return o;}};
 }
 // La PWA light usa el formulario A/B/C: la versión detallada (formularioLight heredada del
 // index.html de la PWA completa) se reemplaza por esta capa. Los llamadores siguen usando

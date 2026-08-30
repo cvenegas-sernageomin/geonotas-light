@@ -1,5 +1,5 @@
 // Service worker offline-first (cache estatico)
-const CACHE='geoterreno-cdc-light-v7';
+const CACHE='geoterreno-cdc-light-v8';
 const ASSETS=['./','./index.html','./manifest.json','./guia_fields.js','./icons/icon-192.png','./icons/icon-512.png',
   './vendor/leaflet.css','./vendor/leaflet.js','./vendor/idb.js','./vendor/leaflet.offline.js',
   './vendor/georaster.browser.bundle.min.js','./vendor/georaster-layer-for-leaflet.min.js',
@@ -10,6 +10,15 @@ const ASSETS=['./','./index.html','./manifest.json','./guia_fields.js','./icons/
 // ~39 MB entre los tres y el install del SW los bajaria en cada dispositivo aunque el geologo
 // nunca exporte GDB. Igual quedan cacheados por la rama cache-first de abajo la primera vez
 // que se usa la exportacion estando en linea. NO agregarlos aca "para completar la lista".
+//
+// vendor/voz/* (dictado offline) queda fuera por lo mismo: ~21 MB de runtime que solo hacen
+// falta si el geologo dicta. La rama cache-first los captura la primera vez que toca el
+// microfono -- que es cuando descarga el motor, con conexion. Excepcion: voz.js SI conviene
+// que este a mano porque decide si mostrar el boton, pero pesa 15 KB y ya lo trae index.html
+// como <script>, asi que entra por la misma rama cache-first sin ocupar lugar en el install.
+// El modelo (~78 MB) no pasa por aca: vive en otro path del dominio, fuera del scope de este
+// SW, y lo administra Transformers.js en la Cache API (con alcance de ORIGEN, asi que se
+// comparte con las demas PWAs).
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;
