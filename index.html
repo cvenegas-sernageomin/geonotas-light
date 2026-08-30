@@ -3334,7 +3334,7 @@ const MODELO = {
 </script>
 <script>
 "use strict";
-const APP_VER = 'light-4';   // se muestra en Proyectos; subir junto con el cache del SW
+const APP_VER = 'light-5';   // se muestra en Proyectos; subir junto con el cache del SW
 // ============================ Utilidades ============================
 const $ = s => document.querySelector(s);
 const el = (t,a={},...c)=>{const e=document.createElement(t);for(const k in a){if(k==='class')e.className=a[k];else if(k==='html')e.innerHTML=a[k];else if(k.startsWith('on'))e.addEventListener(k.slice(2),a[k]);else e.setAttribute(k,a[k]);}c.flat().forEach(x=>e.append(x&&x.nodeType?x:document.createTextNode(x==null?'':x)));return e;};
@@ -4396,6 +4396,32 @@ function construirGuia(cCfg){
   return 'Campos: '+lista+'. Escriba cada dato como "Etiqueta: valor" (uno por renglón). '
     +'Los varios valores de un mismo campo se separan entre sí con ";".';
 }
+// Panel Litología simplificado: en vez de la lista mecánica de los ~48 campos que colapsó
+// aquí (mineralogía, textura, alteración, clastos...), una ayuda-memoria de qué anotar SEGÚN
+// el tipo de roca elegido -- lo que un geólogo recordaría igual, pero sin tener que teclear
+// ninguna etiqueta exacta primero (el parser de la guía las reconoce igual si se escriben).
+const AYUDA_MEMORIA_LITOLOGIA = {
+  'Volcánica': 'Color (fresco/meteorizado), textura y estructura, fenocristales (especie, %, '
+    +'tamaño) y masa fundamental, grado y tipo de alteración. Si es piroclástica: granulometría '
+    +'y % de líticos/pómez/cristales, soldadura.',
+  'Intrusiva': 'Color, textura y tamaño de grano, composición mineral (cuarzo, feldespatos, '
+    +'máficos), estructura, grado y tipo de alteración.',
+  'Sedimentaria': 'Color, granulometría, selección y redondeamiento, composición y litología de '
+    +'los clastos, matriz/cemento, estructuras sedimentarias, grado de consolidación.',
+  'Metamórfica': 'Color, textura (foliada/no foliada) y estructura, mineralogía, grado y tipo '
+    +'de alteración.',
+  'Depósito': 'Color, granulometría, composición y litología de los clastos, matriz, fábrica, '
+    +'espesor y geometría del depósito.',
+};
+function construirGuiaLitologia(tipoRoca){
+  const ayuda=AYUDA_MEMORIA_LITOLOGIA[tipoRoca];
+  const base = ayuda
+    ? 'Anote lo que corresponda de: '+ayuda
+    : 'Elija primero el Tipo de roca arriba: aquí aparece qué anotar según el tipo '
+      +'(color, textura, mineralogía, alteración, etc.).';
+  return base+' Escriba cada dato como "Etiqueta: valor" (uno por renglón); los varios valores '
+    +'de un mismo campo se separan entre sí con ";".';
+}
 // Rellena el textarea con lo ya guardado: "Etiqueta: valor" por renglón (solo campos no vacíos).
 function textoGuiaDesdeReg(reg,cCfg){
   if(!cCfg)return '';
@@ -4581,14 +4607,18 @@ function formularioLight(store, reg, ctx){
   cont.append(rowWrap);
 
   // ---- C) Descripción: un textarea guiado por store (toda la parte textual) ----
+  // Litología usa una guía dinámica (ayuda-memoria por TIPO_ROCA) en vez de la lista fija de
+  // etiquetas: se recalcula cada vez que cambia TIPO_ROCA, ver el listener de cascadas abajo.
+  const esLito = store==='litologia';
+  const guiaActual = () => esLito ? construirGuiaLitologia(inputs['TIPO_ROCA']?inputs['TIPO_ROCA'].value:'') : construirGuia(cCfg);
   if(cCampos.length){
     const ccard=el('div',{class:'card'});
     ccard.append(el('h3',{class:'hsec'},'Descripción / texto'));
     const hint=el('div',{class:'nota'},'Escriba cada dato como "Etiqueta: valor" (uno por renglón). '
       +'Los varios valores de un mismo campo se separan con ";".');
     const btn=el('button',{class:'btn sec mini',type:'button',
-      onclick:()=>{cta.value=construirGuia(cCfg);}},'📋 Instalar guía');
-    cta=el('textarea',{rows:5,class:'lightdesc',name:'__desc__',placeholder:construirGuia(cCfg)});
+      onclick:()=>{cta.value=guiaActual();}},'📋 Instalar guía');
+    cta=el('textarea',{rows:5,class:'lightdesc',name:'__desc__',placeholder:guiaActual()});
     cta.value=textoGuiaDesdeReg(reg,cCfg);
     ccard.append(el('div',{class:'btnbar'},btn),hint,cta);
     cont.append(ccard);
@@ -4715,6 +4745,10 @@ function formularioLight(store, reg, ctx){
       filtrarNombreRocaVolcanica(false); filtrarTexturaVolcanica(false);
       aplicarCondicionales();
     }
+    // Ayuda-memoria de Litología: se recalcula al elegir/cambiar TIPO_ROCA. Solo toca el
+    // placeholder (texto gris de ejemplo), nunca cta.value -- no se pisa lo que el geólogo
+    // ya escribió.
+    if(esLito && changed==='TIPO_ROCA' && cta) cta.placeholder=guiaActual();
     // dominio abierto "agregar nuevo"
     if(e.target.tagName==='SELECT' && e.target.value==='__add__'){
       const campo=cs.find(c=>c.nombre===e.target.name);

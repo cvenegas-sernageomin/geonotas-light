@@ -92,6 +92,22 @@ def categoria(campo, dominios):
 NUM_RE = re.compile(r'COTA|AZIMUT|MANTEO|BUZAMIENTO|PESO|VOLUMEN|RUMBO|ORIENTACION|TREND|PLUNGE|ESPESOR|_PCT$|_CM$|_MM$')
 TXT_RE = re.compile(r'DESCRIPCION|OBSERVACION|COMENTARIO|RELACION_LITOLOGIA|DISTRIBUCION|TEXTO|PROSA')
 
+# Excepciones a la regla determinista de arriba, a pedido explicito del usuario (2026-08-30):
+#
+# 'litologia' se simplifica al maximo: el geologo clasifica con TIPO_ROCA y NOMBRE_ROCA (los
+# unicos dos que quedan como widget) y describe TODO lo demas -- color, textura, mineralogia,
+# alteracion, granulometria, clastos... -- en el campo libre guiado, que en runtime muestra una
+# ayuda-memoria distinta segun el TIPO_ROCA elegido (ver AYUDA_MEMORIA_LITOLOGIA en index.html).
+# Sigue siendo el MISMO dato al guardar: el parser de la guia reconoce cualquier etiqueta de
+# estos campos escrita a mano ("Color fresco: gris"), asi que no se pierde nada del modelo.
+LITOLOGIA_WIDGET = {'TIPO_ROCA', 'NOMBRE_ROCA'}
+
+# 'muestreo', al reves: la PWA light NO lo simplifica, replica exactamente la ficha Muestra de
+# la PWA completa (captura-terreno) -- cada campo es su propio widget, nada se colapsa al texto
+# guiado. A diferencia de litologia (con decenas de campos de detalle petrografico que aca no
+# tienen sentido en terreno), la ficha de muestra es corta y cada campo se usa siempre.
+MUESTREO_SIN_COLAPSAR = {'TIPO_MUESTRA', 'DESCRIPCION_MUESTRA', 'PROPOSITO_ANALISIS', 'ORIENTACION_MUESTRA'}
+
 
 def tabla_de(store):
     s = STORE_ESQUEMA.get(store, store)
@@ -166,10 +182,15 @@ def main():
             n = campo.get('nombre')
             if hide_field(store, n, pk):
                 continue
+            cat = categoria(campo, modelo.get('dominios', {}))
+            if store == 'litologia' and n not in LITOLOGIA_WIDGET:
+                cat = 'C'
+            elif store == 'muestreo' and n in MUESTREO_SIN_COLAPSAR and cat == 'C':
+                cat = 'B' if tipo_widget(campo) == 'number' else 'A'
             fields.append({
                 'campo': n,
                 'etiqueta': etiqueta_campo(n),
-                'cat': categoria(campo, modelo.get('dominios', {})),
+                'cat': cat,
             })
         # Panel Litología: NOMBRE_ROCA se muestra al final (mismo criterio que el index.html).
         if store == 'litologia':

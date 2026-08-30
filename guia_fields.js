@@ -116,12 +116,12 @@ var GUIA_FIELDS = {
   {
    "campo": "TIPO_VOLCANICA",
    "etiqueta": "TIPO VOLCANICA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "TIPO_DEPOSITO",
    "etiqueta": "TIPO DEPOSITO",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "COLOR_FRESCO",
@@ -136,17 +136,17 @@ var GUIA_FIELDS = {
   {
    "campo": "GRANULOMETRIA",
    "etiqueta": "GRANULOMETRIA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "TEXTURA",
    "etiqueta": "TEXTURA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "ESTRUCTURA_TIPO_ROCA",
    "etiqueta": "ESTRUCTURA TIPO ROCA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "DESCRIPCION_LITOLOGIA",
@@ -186,7 +186,7 @@ var GUIA_FIELDS = {
   {
    "campo": "UNIDAD_GEOLOGICA",
    "etiqueta": "UNIDAD GEOLOGICA",
-   "cat": "A"
+   "cat": "C"
   },
   {
    "campo": "SELECCION",
@@ -206,7 +206,7 @@ var GUIA_FIELDS = {
   {
    "campo": "CLASTOS_TAM_MAX_CM",
    "etiqueta": "CLASTOS tamaño máx. (cm)",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "COMPOSICION_CLASTICA",
@@ -301,7 +301,7 @@ var GUIA_FIELDS = {
   {
    "campo": "LITICOS_PCT",
    "etiqueta": "LITICOS %",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "TIPO_LITICOS",
@@ -316,12 +316,12 @@ var GUIA_FIELDS = {
   {
    "campo": "POMEZ_PCT",
    "etiqueta": "POMEZ %",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "CRISTALES_PCT",
    "etiqueta": "CRISTALES %",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "MATRIZ_COMPOSICION",
@@ -346,7 +346,7 @@ var GUIA_FIELDS = {
   {
    "campo": "MATRIZ_PCT",
    "etiqueta": "MATRIZ %",
-   "cat": "B"
+   "cat": "C"
   },
   {
    "campo": "CRISTALINIDAD",
@@ -467,17 +467,17 @@ var GUIA_FIELDS = {
   {
    "campo": "TIPO_MUESTRA",
    "etiqueta": "TIPO MUESTRA",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "DESCRIPCION_MUESTRA",
    "etiqueta": "DESCRIPCION MUESTRA",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "PROPOSITO_ANALISIS",
    "etiqueta": "PROPOSITO ANALISIS",
-   "cat": "C"
+   "cat": "A"
   },
   {
    "campo": "PESO",
@@ -492,7 +492,7 @@ var GUIA_FIELDS = {
   {
    "campo": "ORIENTACION_MUESTRA",
    "etiqueta": "ORIENTACION MUESTRA",
-   "cat": "C"
+   "cat": "B"
   }
  ],
  "foto": [
