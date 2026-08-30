@@ -88,6 +88,15 @@
   .fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--verde);box-shadow:var(--ring)}
   .fld textarea{resize:vertical;min-height:58px}
   .fld .nota{font-size:10px;color:var(--muted)}
+  /* El campo libre guiado (litología, muestra sin C, cualquier ficha con "Descripción / texto")
+     no vive dentro de un .fld -- se arma aparte, directo en la tarjeta -- así que no heredaba
+     NADA de la regla de arriba: quedaba con el ancho y la letra por defecto del navegador
+     (~20 columnas), ilegible para escribir la descripción completa de una roca en terreno. Con
+     litología reducida a un solo campo real de trabajo, este es EL campo de la ficha. */
+  .lightdesc{padding:10px 11px;border:1px solid var(--inp-bd);border-radius:10px;font-size:16px;
+    line-height:1.45;font-family:inherit;background:var(--inp);color:var(--txt);width:100%;
+    min-height:220px;resize:vertical;transition:border-color .15s,box-shadow .15s}
+  .lightdesc:focus{outline:none;border-color:var(--verde);box-shadow:var(--ring)}
   button{font-family:inherit;font-size:14px;border:none;border-radius:10px;padding:9px 15px;cursor:pointer;font-weight:600;transition:filter .15s,transform .05s;color:#fff}
   button:hover{filter:brightness(1.07)}button:active{transform:translateY(1px)}
   .btn{background:var(--btn-green)}
@@ -3334,7 +3343,7 @@ const MODELO = {
 </script>
 <script>
 "use strict";
-const APP_VER = 'light-5';   // se muestra en Proyectos; subir junto con el cache del SW
+const APP_VER = 'light-6';   // se muestra en Proyectos; subir junto con el cache del SW
 // ============================ Utilidades ============================
 const $ = s => document.querySelector(s);
 const el = (t,a={},...c)=>{const e=document.createElement(t);for(const k in a){if(k==='class')e.className=a[k];else if(k==='html')e.innerHTML=a[k];else if(k.startsWith('on'))e.addEventListener(k.slice(2),a[k]);else e.setAttribute(k,a[k]);}c.flat().forEach(x=>e.append(x&&x.nodeType?x:document.createTextNode(x==null?'':x)));return e;};
@@ -4618,7 +4627,7 @@ function formularioLight(store, reg, ctx){
       +'Los varios valores de un mismo campo se separan con ";".');
     const btn=el('button',{class:'btn sec mini',type:'button',
       onclick:()=>{cta.value=guiaActual();}},'📋 Instalar guía');
-    cta=el('textarea',{rows:5,class:'lightdesc',name:'__desc__',placeholder:guiaActual()});
+    cta=el('textarea',{rows:9,class:'lightdesc',name:'__desc__',placeholder:guiaActual()});
     cta.value=textoGuiaDesdeReg(reg,cCfg);
     ccard.append(el('div',{class:'btnbar'},btn),hint,cta);
     cont.append(ccard);

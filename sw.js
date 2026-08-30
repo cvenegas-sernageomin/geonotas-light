@@ -1,5 +1,5 @@
 // Service worker offline-first (cache estatico)
-const CACHE='geoterreno-cdc-light-v5';
+const CACHE='geoterreno-cdc-light-v6';
 const ASSETS=['./','./index.html','./manifest.json','./guia_fields.js','./icons/icon-192.png','./icons/icon-512.png',
   './vendor/leaflet.css','./vendor/leaflet.js','./vendor/idb.js','./vendor/leaflet.offline.js',
   './vendor/georaster.browser.bundle.min.js','./vendor/georaster-layer-for-leaflet.min.js',
