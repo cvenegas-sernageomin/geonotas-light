@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PWA Geonotas Light — Prueba de humo</title>
+<style>
+  :root{--verde:#2f6b4f;--rojo:#c0463a;--bd:#d5dbce;--muted:#5f6b62;--surface:#f8f9f4}
+  @media (prefers-color-scheme:dark){:root{--verde:#5cbd8c;--rojo:#e0796d;--bd:#33402f;--muted:#9aab9d;--surface:#1d251f}
+    body{background:#141a16;color:#e6ede3}}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:16px;max-width:880px}
+  h1{font-size:18px;margin:0 0 4px;color:var(--verde)}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:14px;line-height:1.5}
+  #resumen{font-size:15px;font-weight:700;padding:10px 14px;border-radius:10px;margin:12px 0;border:1px solid var(--bd)}
+  .t{border:1px solid var(--bd);border-radius:10px;padding:9px 12px;margin-bottom:7px;background:var(--surface);font-size:13.5px}
+  .t b{display:block}
+  .ok b{color:var(--verde)} .fail b{color:var(--rojo)}
+  .det{color:var(--muted);font-size:12px;margin-top:3px;white-space:pre-wrap;font-family:ui-monospace,monospace}
+  button{font:inherit;font-weight:600;color:#fff;background:var(--verde);border:none;border-radius:9px;padding:9px 16px;cursor:pointer}
+  iframe{width:1px;height:1px;border:0;position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<h1>Prueba de humo — PWA Geonotas Light</h1>
+<div class="sub">Corre contra el <code>index.html</code> real de la <b>light</b>, cargado en un iframe.
+El grueso de las pruebas apunta a lo que ESTA app tiene y la completa no: el formulario A/B/C y el
+<b>parser de la guía</b> —de donde salió el peor bug de la light, el descarte silencioso de la prosa dictada.
+<b>No toca tus datos:</b> todo lo que crea lleva el prefijo <code>smoke-</code> (los ids reales empiezan
+con <code>x</code>), solo borra lo suyo, y al final verifica que la cantidad de registros ajenos no cambió.</div>
+<button id="run">▶ Correr de nuevo</button>
+<div id="resumen"></div>
+<div id="out"></div>
+<iframe id="app" src="index.html"></iframe>
+
+<script>
+const P = 'smoke-';                       // prefijo de aislamiento
+// inLat/inLon son `const` dentro de la app y por eso NO son visibles desde aquí (ver
+// esperarApp). Se replican y la primera prueba los contrasta contra el modelo, para que
+// un cambio de nombre haga fallar el test en vez de dejarlo pasar en falso.
+const LAT = 'Coordenadas Geográficas Decimales_Lat';
+const LON = 'Coordenadas Geográficas Decimales_Long';
+const STORES_TODOS = ['proyecto','punto','punto_gabinete','linea','linea_gabinete','litologia',
+  'aflora','estructural','contacto','muestreo','foto','esquema','geomorf','fotomapa','nota'];
+
+const $out = document.getElementById('out'), $res = document.getElementById('resumen');
+let pasaron = 0, fallaron = 0;
+
+function ok(cond, msg){ if(!cond) throw new Error(msg); }
+function eq(a, b, msg){
+  ok(JSON.stringify(a) === JSON.stringify(b),
+     msg + ' — esperaba ' + JSON.stringify(b) + ', obtuve ' + JSON.stringify(a));
+}
+async function prueba(nombre, fn){
+  const div = document.createElement('div'); div.className = 't';
+  try { const det = await fn();
+    div.classList.add('ok'); pasaron++;
+    div.innerHTML = '<b>✓ ' + nombre + '</b>' + (det ? '<div class="det">' + det + '</div>' : '');
+  } catch(e){
+    div.classList.add('fail'); fallaron++;
+    div.innerHTML = '<b>✗ ' + nombre + '</b><div class="det">' + (e && e.message || e) + '</div>';
+  }
+  $out.append(div);
+}
+
+// La app declara casi todo con `const`/`let` de nivel superior, que viven en el registro
+// declarativo y NO son propiedades de window: desde el iframe padre solo se ven las
+// DECLARACIONES DE FUNCIÓN (all, put, parsearGuia, campos, …) y las `var` (GUIA_FIELDS).
+// Por eso CAMPO_LIBRE y GUIAS_DINAMICAS, que son `const`, NO se pueden leer desde aquí:
+// las pruebas de campo libre son POR COMPORTAMIENTO, parseando y viendo dónde cae el texto.
+// Eso además es mejor prueba: verifica lo que el usuario sufre, no lo que el código declara.
+const esperarApp = () => new Promise((res, rej) => {
+  const t0 = Date.now();
+  (async function poll(){
+    const w = document.getElementById('app').contentWindow;
+    if (w && typeof w.all === 'function' && typeof w.parsearGuia === 'function' && w.GUIA_FIELDS) {
+      try { await w.all('proyecto'); return res(w); } catch(e){ /* aún abriendo */ }
+    }
+    if (Date.now() - t0 > 20000) return rej(new Error('la app no arrancó en 20 s'));
+    setTimeout(poll, 100);
+  })();
+});
+
+const mio = r => String(r && r.id || '').startsWith(P);
+async function censo(w){                  // cuántos registros AJENOS hay por store
+  const c = {};
+  for (const s of STORES_TODOS) c[s] = (await w.all(s)).filter(r => !mio(r)).length;
+  return c;
+}
+async function borrarMios(w){
+  for (const s of STORES_TODOS) for (const r of await w.all(s)) if (mio(r)) await w.del(s, r.id);
+}
+async function sembrar(w){
+  await w.put('proyecto',  {id:P+'pr', ID_PROYECTO:P+'01', NOMBRE_PROYECTO:'Prueba de humo light'});
+  await w.put('punto',     {id:P+'pt', _parent:P+'pr', ID_PUNTO_CONTROL:'PC-L', GEOLOGO:'smoke',
+                            [LAT]:'-33.450000', [LON]:'-70.650000'});
+  await w.put('litologia', {id:P+'li', _parent:P+'pt', TIPO_ROCA:'Volcánica', NOMBRE_ROCA:'Andesita'});
+}
+const soloMios = bk => {
+  const f = {}; for (const k in bk) f[k] = Array.isArray(bk[k]) ? bk[k].filter(mio) : bk[k];
+  return f;
+};
+// captura lo que la app mandaría a descargar, en vez de bajarlo. Funciona porque `descargar`
+// es una declaración de función: reasignarla en window cambia la ligadura que ve la app.
+async function capturar(w, fn){
+  const orig = w.descargar; let cap = null;
+  w.descargar = (n, b) => { cap = {nombre:n, blob:b}; };
+  try { await fn(); } finally { w.descargar = orig; }
+  ok(cap, 'la exportación no llamó a descargar()');
+  return cap;
+}
+// `toast` también es declaración de función: se intercepta para comprobar que la app AVISA
+// cuando no puede guardar algo, en vez de callarse. Ese es justo el invariante de la light.
+async function conAvisos(w, fn){
+  const orig = w.toast; const msgs = [];
+  w.toast = m => { msgs.push(String(m)); };
+  let r; try { r = await fn(); } finally { w.toast = orig; }
+  return {r, msgs};
+}
+// Config de la guía tal como la arma formularioLight(): categoría C = lo que va al textarea.
+const cfgC = (w, store) => ((w.GUIA_FIELDS && w.GUIA_FIELDS[store]) || []).filter(f => f.cat === 'C');
+const storesConGuia = w => Object.keys(w.GUIA_FIELDS || {}).filter(s => cfgC(w, s).length);
+
+// Renderiza una ficha con formularioLight() DENTRO del documento del iframe y la retira siempre.
+// Hay que adjuntarla de verdad (no basta el nodo suelto) y hay que sacarla en un finally: si
+// quedara pegada, ensuciaría la pantalla de la app que corre en el iframe.
+function conFormulario(w, store, reg, fn){
+  const f = w.formularioLight(store, reg || {}, {});
+  w.document.body.appendChild(f.node);
+  try { return fn(f); } finally { f.node.remove(); }
+}
+// Las medidas de categoría B NO son todas <input type=number>: FECHA y HORA salen como date/time.
+// Contar sólo los number fue justo el error de la batería vieja (probar_parser.py), que exigía
+// number>0 en litología —un store que hoy, por diseño, no tiene ninguna medida—.
+const MEDIDAS = 'input[type=number],input[type=date],input[type=time]';
+
+async function leerVersiones(){           // APP_VER/CACHE son const: se leen del archivo
+  const q = '?smoke=' + Date.now();
+  const html = await (await fetch('index.html' + q)).text();
+  const sw   = await (await fetch('sw.js' + q)).text();
+  // Anclado a la DECLARACIÓN al principio de línea: un regex suelto tomaba la primera
+  // aparición del patrón en el archivo, así que un simple comentario que mencionara
+  // CACHE = '…' eclipsaba a la constante real y la prueba leía un valor falso.
+  return {
+    appVer: (html.match(/^\s*const\s+APP_VER\s*=\s*'([^']+)'/m) || [])[1],
+    cache:  (sw.match(/^\s*const\s+CACHE\s*=\s*'([^']+)'/m) || [])[1]
+  };
+}
+
+async function correr(){
+  $out.innerHTML = ''; $res.textContent = 'Corriendo…'; $res.style.color = ''; $res.style.borderColor = '';
+  pasaron = fallaron = 0;
+  let w;
+  try { w = await esperarApp(); } catch(e){ $res.textContent = '✗ ' + e.message; $res.style.color = 'var(--rojo)'; return; }
+
+  await borrarMios(w);
+  const antes = await censo(w);
+
+  try {
+    await prueba('El modelo tiene los campos que esta prueba asume', async () => {
+      const cs = w.campos('punto').map(c => c.nombre);
+      ok(cs.includes(LAT) && cs.includes(LON), 'PUNTO_CONTROL ya no usa los campos de coordenadas esperados');
+      ok(w.campos('litologia').some(c => c.nombre === 'TIPO_ROCA'), 'TBL_LITOLOGIA no tiene TIPO_ROCA');
+      return cs.length + ' campos en PUNTO_CONTROL';
+    });
+
+    await prueba('APP_VER y el cache del service worker están alineados', async () => {
+      const {appVer, cache} = await leerVersiones();
+      ok(appVer, 'no se pudo leer APP_VER de index.html');
+      ok(cache, 'no se pudo leer CACHE de sw.js');
+      // Se afirma el INVARIANTE (el cache sube junto con APP_VER), no un prefijo de marca:
+      // comparar contra 'geoterreno-cdc-' hizo fallar esta prueba en la app completa al
+      // renombrarla a Geonotas, sin que hubiera ningún desalineamiento real.
+      ok(cache.endsWith('-' + appVer),
+         'desalineados: index.html dice ' + appVer + ' y sw.js dice ' + cache + ' (el usuario verá la versión vieja)');
+      return appVer + ' ↔ ' + cache;
+    });
+
+    await prueba('guia_fields.js está sincronizado con el modelo canónico', async () => {
+      // guia_fields.js lo genera generar_guia.py desde el MISMO modelo. Si alguien corre
+      // sólo build_pwa.py de una versión vieja, el formulario queda con la guía anterior.
+      const stores = Object.keys(w.GUIA_FIELDS);
+      ok(stores.length, 'GUIA_FIELDS está vacío: ¿se cargó guia_fields.js?');
+      const huerfanos = [];
+      for (const s of stores){
+        let delModelo;
+        try { delModelo = new Set(w.campos(s).map(c => c.nombre)); }
+        catch(e){ huerfanos.push(s + ' (store inexistente en el modelo)'); continue; }
+        for (const f of w.GUIA_FIELDS[s])
+          if (!delModelo.has(f.campo)) huerfanos.push(s + '.' + f.campo);
+      }
+      eq(huerfanos, [], 'la guía nombra campos que el modelo ya no tiene (regenerar con generar_guia.py)');
+      const total = stores.reduce((n, s) => n + w.GUIA_FIELDS[s].length, 0);
+      return stores.length + ' stores y ' + total + ' campos, todos existentes en el modelo';
+    });
+
+    await prueba('REGRESIÓN light-8: la prosa dictada sin etiquetas NO se descarta', async () => {
+      // El bug: parsearGuia() tiraba en silencio toda línea que no fuera "Etiqueta: valor".
+      // Se descubrió recién al dictar por voz, porque dictar produce prosa corrida.
+      const prosa = 'Roca gris verdosa muy fracturada, con vetillas de calcita rellenando diaclasas.';
+      const detalle = [];
+      for (const s of storesConGuia(w)){
+        const {r: o, msgs} = await conAvisos(w, () => w.parsearGuia(prosa, cfgC(w, s), w.campos(s), s));
+        const claves = Object.keys(o);
+        ok(claves.length <= 1, s + ': la prosa suelta se repartió en varios campos (' + claves.join(', ') + ')');
+        if (claves.length === 1){
+          const campo = claves[0];
+          // un typo en CAMPO_LIBRE mandaría los datos a un campo que no existe: pérdida silenciosa
+          ok(w.campos(s).some(c => c.nombre === campo),
+             s + ': el campo libre "' + campo + '" NO existe en el modelo (los datos se perderían)');
+          eq(o[campo], prosa, s + ': la prosa no llegó entera al campo libre');
+          detalle.push(s + '→' + campo);
+        } else {
+          // Sin campo libre es aceptable SOLO si la app avisa; callarse sería el bug original.
+          ok(msgs.length, s + ': no tiene campo libre Y NO avisó — la prosa se pierde en silencio');
+          detalle.push(s + '→(sin campo libre, avisa)');
+        }
+      }
+      return detalle.join(' · ');
+    });
+
+    await prueba('La prosa con dos puntos adentro no se parte ni se pierde', async () => {
+      // "Observación: la veta corta al dique" empieza con algo que PARECE etiqueta.
+      const s = 'litologia';
+      const texto = 'Contacto neto: la lava cubre a la brecha, sin suelo entre medio.';
+      const o = w.parsearGuia(texto, cfgC(w, s), w.campos(s), s);
+      const claves = Object.keys(o);
+      eq(claves.length, 1, 'debería caer entero en un solo campo');
+      eq(o[claves[0]], texto, 'la línea se mutiló: se perdió lo que iba antes o después de los dos puntos');
+      return 'conservada entera en ' + claves[0];
+    });
+
+    await prueba('Un número suelto NO se adivina como medida (nunca puebla un campo B)', async () => {
+      // Dictar "15" no debe rellenar COTA ni una coordenada: esos campos son widgets (B) y sólo
+      // se llenan a mano. El texto suelto va al campo libre. Si el parser recibiera la guía sin
+      // filtrar por categoría C, un número podría caer en una medida sin que nadie lo note.
+      const s = 'punto';
+      const B = w.GUIA_FIELDS[s].filter(f => f.cat === 'B').map(f => f.campo);
+      ok(B.length, 'punto no declara medidas: la prueba ya no aplica');
+      const o = w.parsearGuia('15\n1500 metros aproximadamente', cfgC(w, s), w.campos(s), s);
+      const invadidos = B.filter(c => o[c] != null);
+      eq(invadidos, [], 'un número suelto pobló campos de medida: ' + invadidos.join(', '));
+      const claves = Object.keys(o);
+      eq(claves.length, 1, 'el número suelto debería caer sólo en el campo libre');
+      return 'ninguna de las ' + B.length + ' medidas tocada; todo a ' + claves[0];
+    });
+
+    await prueba('Etiqueta reconocida va a su campo; el resto queda como prosa', async () => {
+      const s = 'litologia';
+      const cfg = cfgC(w, s);
+      ok(cfg.length, 'litología no tiene campos de categoría C');
+      const f = cfg[0];
+      const o = w.parsearGuia(f.etiqueta + ': X\ny esto es prosa dictada', cfg, w.campos(s), s);
+      eq(o[f.campo], 'X', 'la etiqueta "' + f.etiqueta + '" no se mapeó a ' + f.campo);
+      const libre = Object.keys(o).find(k => k !== f.campo);
+      ok(libre, 'la prosa que acompañaba a la etiqueta se perdió');
+      eq(o[libre], 'y esto es prosa dictada', 'la prosa acompañante llegó alterada');
+      return f.campo + '=X · prosa → ' + libre;
+    });
+
+    await prueba('La etiqueta se reconoce sin importar acentos ni mayúsculas', async () => {
+      // normalizarEt() quita tildes y baja a minúsculas: dictar no respeta mayúsculas.
+      const s = 'litologia';
+      const cfg = cfgC(w, s);
+      const f = cfg[0];
+      const raro = f.etiqueta.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const o = w.parsearGuia(raro + ': Y', cfg, w.campos(s), s);
+      eq(o[f.campo], 'Y', 'la etiqueta "' + raro + '" no se reconoció como ' + f.campo);
+      return '"' + raro + '" → ' + f.campo;
+    });
+
+    await prueba('El nombre técnico del campo también sirve como etiqueta', async () => {
+      // parsearGuia mapea la etiqueta legible Y el nombre del campo: quien conoce el modelo
+      // puede dictar "DESCRIPCION_LITOLOGIA: …" y va al mismo lugar.
+      const s = 'litologia';
+      const cfg = cfgC(w, s);
+      const f = cfg[0];
+      const o = w.parsearGuia(f.campo + ': por nombre técnico', cfg, w.campos(s), s);
+      eq(o[f.campo], 'por nombre técnico', 'el nombre técnico "' + f.campo + '" no se aceptó como etiqueta');
+      return f.campo + ' reconocido como etiqueta';
+    });
+
+    await prueba('construirGuia() arma la ayuda de la ficha', async () => {
+      const texto = w.construirGuia(cfgC(w, 'litologia'));
+      ok(texto && texto.length > 40, 'la guía salió vacía o demasiado corta');
+      ok(!/^Este registro no tiene campos descriptivos/.test(texto),
+         'litología quedó sin campos descriptivos: ¿se rompió la categorización C?');
+      return texto.slice(0, 70).replace(/\s+/g, ' ') + '…';
+    });
+
+    await prueba('Un valor fuera del dominio se conserva y se avisa, no se borra', async () => {
+      const s = 'litologia';
+      const cfg = cfgC(w, s);
+      const conDominio = cfg.find(f => {
+        const c = w.campos(s).find(x => x.nombre === f.campo);
+        return c && c.dominio;
+      });
+      ok(conDominio, 'ningún campo de categoría C de litología tiene dominio');
+      const inventado = 'valor-que-no-existe-en-el-dominio';
+      const {r: o, msgs} = await conAvisos(w,
+        () => w.parsearGuia(conDominio.etiqueta + ': ' + inventado, cfg, w.campos(s), s));
+      ok(String(o[conDominio.campo] || '').includes(inventado),
+         'el valor fuera de dominio se BORRÓ en vez de conservarse');
+      ok(msgs.length, 'se conservó el valor pero no se avisó al usuario');
+      return conDominio.campo + ' conservado + aviso: "' + msgs[0].slice(0, 60) + '…"';
+    });
+
+    await prueba('Punto y coma dentro de un valor significa múltiple', async () => {
+      const s = 'litologia';
+      const cfg = cfgC(w, s);
+      const f = cfg.find(x => { const c = w.campos(s).find(y => y.nombre === x.campo); return c && !c.dominio; }) || cfg[0];
+      const o = w.parsearGuia(f.etiqueta + ': uno; dos; tres', cfg, w.campos(s), s);
+      eq(o[f.campo], 'uno; dos; tres', 'no se conservaron los tres valores');
+      return f.campo + ' = uno; dos; tres';
+    });
+
+    await prueba('Ida y vuelta guardar → reabrir → guardar no altera el texto', async () => {
+      // textoGuiaDesdeReg() escribe el campo libre SIN etiqueta y al final, justo para que
+      // el ciclo no vaya envolviendo la prosa en etiquetas cada vez que se reabre la ficha.
+      const s = 'litologia';
+      const cfg = cfgC(w, s);
+      const f = cfg[0];
+      const prosa = 'Prosa dictada que debe volver igual.';
+      const reg = {}; reg[f.campo] = 'X';
+      const o1 = w.parsearGuia(w.textoGuiaDesdeReg(reg, cfg, s) + '\n' + prosa, cfg, w.campos(s), s);
+      const t2 = w.textoGuiaDesdeReg(o1, cfg, s);
+      const o2 = w.parsearGuia(t2, cfg, w.campos(s), s);
+      eq(o2, o1, 'el segundo ciclo cambió los datos (la prosa se está re-etiquetando)');
+      const libre = Object.keys(o1).find(k => k !== f.campo);
+      eq(o1[libre], prosa, 'la prosa no sobrevivió el primer ciclo');
+      return 'estable en 2 ciclos; prosa intacta en ' + libre;
+    });
+
+    await prueba('Litología quedó realmente simplificada (A = clasificación mínima)', async () => {
+      const A = (w.GUIA_FIELDS.litologia || []).filter(f => f.cat === 'A').map(f => f.campo);
+      eq(A, ['TIPO_ROCA', 'NOMBRE_ROCA'],
+         'la simplificación A/B/C de litología cambió (se esperaba solo la cascada TIPO_ROCA → NOMBRE_ROCA)');
+      const C = (w.GUIA_FIELDS.litologia || []).filter(f => f.cat === 'C').length;
+      ok(C > 10, 'muy pocos campos en el textarea guiado: ¿se rompió la categorización?');
+      return 'A=[' + A.join(', ') + '] · C=' + C + ' campos al textarea';
+    });
+
+    await prueba('Muestreo NO se simplifica: replica la ficha completa', async () => {
+      // Decisión de diseño explícita del proyecto: muestreo conserva la ficha entera.
+      const g = w.GUIA_FIELDS.muestreo || [];
+      ok(g.length, 'muestreo no aparece en la guía');
+      const delModelo = w.campos('muestreo').length;
+      ok(g.length >= delModelo * 0.8,
+         'muestreo perdió campos respecto del modelo (' + g.length + ' de ' + delModelo + ')');
+      return g.length + ' campos en la guía sobre ' + delModelo + ' del modelo';
+    });
+
+    await prueba('El formulario renderiza exactamente las medidas B que declara la guía', async () => {
+      // Invariante que ata guia_fields.js con el DOM real: si la categorización se desalinea
+      // del render, un campo declarado como medida deja de tener widget y sólo se nota en terreno.
+      const det = [];
+      for (const s of Object.keys(w.GUIA_FIELDS)){
+        const B = w.GUIA_FIELDS[s].filter(f => f.cat === 'B');
+        if (!B.length) continue;
+        const n = conFormulario(w, s, {}, f => f.node.querySelectorAll(MEDIDAS).length);
+        eq(n, B.length, s + ': la guía declara ' + B.length + ' medidas (B) y el formulario renderizó ' + n);
+        det.push(s + '=' + n);
+      }
+      ok(det.length, 'ningún store declara campos de categoría B: ¿se rompió la categorización?');
+      return det.join(' · ');
+    });
+
+    await prueba('Litología se renderiza simplificada: solo la cascada, sin medidas', async () => {
+      const r = conFormulario(w, 'litologia', {TIPO_ROCA:'Volcánica', TIPO_VOLCANICA:'Lava'}, f => ({
+        sel: f.node.querySelectorAll('select').length,
+        med: f.node.querySelectorAll(MEDIDAS).length,
+        ta:  f.node.querySelectorAll('textarea.lightdesc').length
+      }));
+      eq(r.sel, 2, 'litología debería mostrar solo TIPO_ROCA y NOMBRE_ROCA como selects');
+      eq(r.med, 0, 'litología no debe tener medidas: todo lo cuantitativo va al campo libre guiado');
+      eq(r.ta, 1, 'debería haber exactamente un textarea guiado');
+      return '2 selects · 0 medidas · 1 textarea';
+    });
+
+    await prueba('getData() reparte el textarea guiado, un campo por renglón', async () => {
+      const d = conFormulario(w, 'litologia', {TIPO_ROCA:'Volcánica', TIPO_VOLCANICA:'Lava'}, f => {
+        f.node.querySelector('textarea.lightdesc').value =
+          'Descripción litología: roca verde, vetillas\nObservación: óxidos de hierro';
+        return f.getData();
+      });
+      eq(d.DESCRIPCION_LITOLOGIA, 'roca verde, vetillas', 'el primer renglón no llegó a su campo');
+      eq(d.OBSERVACION, 'óxidos de hierro', 'el segundo renglón no llegó a su campo');
+      return 'DESCRIPCION_LITOLOGIA + OBSERVACION desde 2 renglones';
+    });
+
+    await prueba('Ciclo completo: capturar → respaldar → borrar → restaurar', async () => {
+      await sembrar(w);
+      const bk = soloMios(JSON.parse(await (await w.buildBackupBlob('terreno')).text()));
+      await borrarMios(w);
+      eq((await w.all('punto')).filter(mio).length, 0, 'el borrado previo a restaurar no dejó limpio');
+      const f = new w.File([JSON.stringify(bk)], 'bk.json', {type:'application/json'});
+      await w.importBackup(f, 'terreno');
+      const pt = (await w.all('punto')).filter(mio);
+      eq(pt.length, 1, 'no volvió el punto');
+      eq(pt[0][LAT], '-33.450000', 'la latitud no sobrevivió el ciclo');
+      const li = (await w.all('litologia')).filter(mio);
+      eq(li.length, 1, 'no volvió la litología');
+      eq(li[0].NOMBRE_ROCA, 'Andesita', 'la litología volvió alterada');
+      eq(li[0]._parent, P+'pt', 'la litología perdió su punto padre');
+      return 'punto, litología y coordenadas intactos';
+    });
+
+    await prueba('La exportación CSV corre sin reventar y produce un archivo', async () => {
+      const cap = await capturar(w, () => w.exportCSV(P+'pr'));
+      ok(/\.zip$/i.test(cap.nombre), 'el CSV no salió como .zip: ' + cap.nombre);
+      ok(cap.blob && cap.blob.size > 200, 'el ZIP salió vacío o demasiado chico');
+      return cap.nombre + ' (' + Math.round(cap.blob.size/1024) + ' KB)';
+    });
+
+    await prueba('La exportación KMZ corre sin reventar y produce un archivo', async () => {
+      const cap = await capturar(w, () => w.exportKMZ(P+'pr'));
+      ok(/\.kmz$/i.test(cap.nombre), 'el KMZ no salió como .kmz: ' + cap.nombre);
+      ok(cap.blob && cap.blob.size > 200, 'el KMZ salió vacío o demasiado chico');
+      return cap.nombre + ' (' + Math.round(cap.blob.size/1024) + ' KB)';
+    });
+
+  } finally {
+    await borrarMios(w);
+    await prueba('No quedó basura ni se tocaron datos ajenos', async () => {
+      for (const s of STORES_TODOS) eq((await w.all(s)).filter(mio).length, 0, 'quedaron registros smoke- en ' + s);
+      const despues = await censo(w);
+      eq(despues, antes, 'cambió la cantidad de registros ajenos');
+      const total = Object.values(despues).reduce((a,b)=>a+b, 0);
+      return total ? 'tus ' + total + ' registros siguen intactos' : 'no había datos previos; nada que preservar';
+    });
+  }
+
+  const total = pasaron + fallaron;
+  $res.textContent = fallaron ? '✗ ' + fallaron + ' de ' + total + ' fallaron' : '✓ ' + pasaron + '/' + total + ' pasaron';
+  $res.style.color = fallaron ? 'var(--rojo)' : 'var(--verde)';
+  $res.style.borderColor = fallaron ? 'var(--rojo)' : 'var(--verde)';
+}
+
+document.getElementById('run').addEventListener('click', correr);
+window.addEventListener('load', correr);
+</script>
+</body>
+</html>

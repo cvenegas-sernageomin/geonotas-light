@@ -1,5 +1,8 @@
 // Service worker offline-first (cache estatico)
-const CACHE='geoterreno-cdc-light-v8';
+// Regla: el nombre del cache es "geonotas-" seguido del APP_VER de index.html
+// (el de esta app ya trae el "light-" adentro). Antes habia una "v" de mas que rompia
+// esa correspondencia; no lo notaba nadie porque la light no tenia prueba de humo.
+const CACHE='geonotas-light-9';
 const ASSETS=['./','./index.html','./manifest.json','./guia_fields.js','./icons/icon-192.png','./icons/icon-512.png',
   './vendor/leaflet.css','./vendor/leaflet.js','./vendor/idb.js','./vendor/leaflet.offline.js',
   './vendor/georaster.browser.bundle.min.js','./vendor/georaster-layer-for-leaflet.min.js',

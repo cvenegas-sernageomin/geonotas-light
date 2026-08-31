@@ -1,6 +1,6 @@
 {
-  "name": "GeoTerreno Light — Captura simplificada",
-  "short_name": "GeoTerreno Light",
+  "name": "PWA Geonotas Light — Captura simplificada",
+  "short_name": "Geonotas Light",
   "description": "Libreta digital de geología básica en terreno, offline (captura simplificada A/B/C, mapa satelital y export CSV/KMZ/GeoPackage/GDB/PDF).",
   "start_url": ".",
   "scope": ".",
