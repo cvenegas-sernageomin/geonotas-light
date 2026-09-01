@@ -41,6 +41,9 @@ const LAT = 'Coordenadas Geográficas Decimales_Lat';
 const LON = 'Coordenadas Geográficas Decimales_Long';
 const STORES_TODOS = ['proyecto','punto','punto_gabinete','linea','linea_gabinete','litologia',
   'aflora','estructural','contacto','muestreo','foto','esquema','geomorf','fotomapa','nota'];
+// Nombres de cachés ajenas que el purgado de ESTA app NUNCA debe capturar. 'transformers-cache'
+// es donde Transformers.js guarda el modelo de voz (~78 MB) de esta misma app, fuera del SW.
+const AJENAS = ['geonotas-v109', 'geonotas-v108', 'geoterreno-cdc-v107', 'transformers-cache'];
 
 const $out = document.getElementById('out'), $res = document.getElementById('resumen');
 let pasaron = 0, fallaron = 0;
@@ -173,6 +176,28 @@ async function correr(){
       ok(cache.endsWith('-' + appVer),
          'desalineados: index.html dice ' + appVer + ' y sw.js dice ' + cache + ' (el usuario verá la versión vieja)');
       return appVer + ' ↔ ' + cache;
+    });
+
+    await prueba('REGRESIÓN: el SW purga solo lo suyo, no las cachés de la otra app', async () => {
+      // La Cache API tiene alcance de ORIGEN, no de ruta: esta app y la completa viven en el
+      // mismo github.io, igual que 'transformers-cache', donde Transformers.js guarda el modelo
+      // de voz (~78 MB) de ESTA app. El activate borraba TODO lo que no fuera su CACHE, así que
+      // bastaba abrir la app completa una vez para quedarse sin dictado offline, irrecuperable
+      // sin señal. Medido en vivo el 2026-08-31: caches.keys() pasó de ['geonotas-v108'] a
+      // ['geonotas-light-9'] al abrir esta app.
+      // No hace falta un service worker registrado: se comprueba sobre el sw.js servido, así
+      // que esta prueba también corre en el navegador embebido, que no registra SW.
+      const sw = await (await fetch('sw.js?smoke=' + Date.now())).text();
+      const act = (sw.match(/addEventListener\('activate'[^\n]*/) || [''])[0];
+      ok(/esMia\(/.test(act), 'el activate volvió a purgar sin restringirse a sus propias cachés');
+      const patrones = [...sw.matchAll(/\/\^([^/]+)\$\//g)].map(m => m[1]);
+      ok(patrones.length, 'no se encontró la lista MIAS de cachés propias en sw.js');
+      const capturadas = AJENAS.filter(a => patrones.some(p => new RegExp('^' + p + '$').test(a)));
+      eq(capturadas, [], 'el purgado captura cachés que no son de esta app');
+      const {cache} = await leerVersiones();
+      ok(patrones.some(p => new RegExp('^' + p + '$').test(cache)),
+         'la caché propia "' + cache + '" no calza con ningún patrón: las versiones viejas nunca se purgarían');
+      return patrones.length + ' patrones propios; ninguna de las ' + AJENAS.length + ' ajenas capturada';
     });
 
     await prueba('guia_fields.js está sincronizado con el modelo canónico', async () => {

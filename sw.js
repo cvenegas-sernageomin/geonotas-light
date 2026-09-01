@@ -2,7 +2,16 @@
 // Regla: el nombre del cache es "geonotas-" seguido del APP_VER de index.html
 // (el de esta app ya trae el "light-" adentro). Antes habia una "v" de mas que rompia
 // esa correspondencia; no lo notaba nadie porque la light no tenia prueba de humo.
-const CACHE='geonotas-light-9';
+const CACHE='geonotas-light-10';
+// Caches que ESTA app puede purgar al activarse. NO se borra "todo lo que no sea CACHE":
+// la Cache API tiene alcance de ORIGEN, no de ruta, y las dos PWAs viven en el mismo
+// cvenegas-sernageomin.github.io. Con el filtro viejo, activar esta app borraba la cache de
+// la completa -- y tambien 'transformers-cache', que es donde Transformers.js guarda el
+// modelo de voz de ~78 MB de ESTA misma app: bastaba abrir la completa una vez para quedarse
+// sin dictado offline, imposible de recuperar sin señal. Medido el 2026-08-31 contra el sitio
+// en vivo. Las dos listas son disjuntas: 'geonotas-light-10' no calza en las de la completa.
+const MIAS=[/^geonotas-light-\d+$/, /^geoterreno-cdc-light-v\d+$/];  // la 2a: previa al renombre
+const esMia=k=>MIAS.some(re=>re.test(k));
 const ASSETS=['./','./index.html','./manifest.json','./guia_fields.js','./icons/icon-192.png','./icons/icon-512.png',
   './vendor/leaflet.css','./vendor/leaflet.js','./vendor/idb.js','./vendor/leaflet.offline.js',
   './vendor/georaster.browser.bundle.min.js','./vendor/georaster-layer-for-leaflet.min.js',
@@ -23,7 +32,7 @@ const ASSETS=['./','./index.html','./manifest.json','./guia_fields.js','./icons/
 // SW, y lo administra Transformers.js en la Cache API (con alcance de ORIGEN, asi que se
 // comparte con las demas PWAs).
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&esMia(k)).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;
   const req=e.request;
   // Cross-origin (tiles satelitales/topo de Esri y OpenTopoMap, export de ArcGIS): NO se
