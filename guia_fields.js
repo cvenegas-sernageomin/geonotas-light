@@ -239,6 +239,16 @@ var GUIA_FIELDS = {
    "cat": "C"
   },
   {
+   "campo": "CONTENIDO_FOSIL",
+   "etiqueta": "CONTENIDO FOSIL",
+   "cat": "C"
+  },
+  {
+   "campo": "CONTENIDO_FOSIL_DETALLE",
+   "etiqueta": "CONTENIDO FOSIL DETALLE",
+   "cat": "C"
+  },
+  {
    "campo": "COMPOSICION_MINERAL_PRINCIPAL",
    "etiqueta": "COMPOSICION MINERAL PRINCIPAL",
    "cat": "C"
