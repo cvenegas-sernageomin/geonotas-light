@@ -1,10 +1,10 @@
 # PWA Geonotas Light — Captura simplificada
 
-Variante simplificada de [PWA Geonotas](https://cvenegas-sernageomin.github.io/geoterreno-cdc/) para
+Variante simplificada de [PWA Geonotas](https://cvenegas-sernageomin.github.io/geonotas/) para
 captura de **geología básica en terreno** (modelo CDC SERNAGEOMIN). Mismo modelo, misma base de
 datos y mismos exports: **lo único que cambia es la capa de formulario**.
 
-**En línea:** https://cvenegas-sernageomin.github.io/geoterreno-cdc-light/
+**En línea:** https://cvenegas-sernageomin.github.io/geonotas-light/
 
 ## Qué la hace distinta: el formulario A/B/C
 
