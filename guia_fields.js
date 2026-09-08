@@ -411,6 +411,26 @@ var GUIA_FIELDS = {
    "cat": "A"
   },
   {
+   "campo": "ESPACIAMIENTO_FRACTURA",
+   "etiqueta": "ESPACIAMIENTO FRACTURA",
+   "cat": "C"
+  },
+  {
+   "campo": "PERSISTENCIA_FRACTURA",
+   "etiqueta": "PERSISTENCIA FRACTURA",
+   "cat": "C"
+  },
+  {
+   "campo": "ABERTURA_FRACTURA",
+   "etiqueta": "ABERTURA FRACTURA",
+   "cat": "C"
+  },
+  {
+   "campo": "TEXTURA_SUPERFICIE_FRACTURA",
+   "etiqueta": "TEXTURA SUPERFICIE FRACTURA",
+   "cat": "C"
+  },
+  {
    "campo": "GRADO_CONFIANZA_ESTRUCTURA",
    "etiqueta": "GRADO CONFIANZA ESTRUCTURA",
    "cat": "C"
