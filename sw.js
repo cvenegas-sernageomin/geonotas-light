@@ -2,7 +2,7 @@
 // Regla: el nombre del cache es "geonotas-" seguido del APP_VER de index.html
 // (el de esta app ya trae el "light-" adentro). Antes habia una "v" de mas que rompia
 // esa correspondencia; no lo notaba nadie porque la light no tenia prueba de humo.
-const CACHE='geonotas-light-19';
+const CACHE='geonotas-light-20';
 // Caches que ESTA app puede purgar al activarse. NO se borra "todo lo que no sea CACHE":
 // la Cache API tiene alcance de ORIGEN, no de ruta, y las dos PWAs viven en el mismo
 // cvenegas-sernageomin.github.io. Con el filtro viejo, activar esta app borraba la cache de
