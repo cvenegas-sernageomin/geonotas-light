@@ -2,7 +2,7 @@
 // Regla: el nombre del cache es "geonotas-" seguido del APP_VER de index.html
 // (el de esta app ya trae el "light-" adentro). Antes habia una "v" de mas que rompia
 // esa correspondencia; no lo notaba nadie porque la light no tenia prueba de humo.
-const CACHE='geonotas-light-20';
+const CACHE='geonotas-light-21';
 // Caches que ESTA app puede purgar al activarse. NO se borra "todo lo que no sea CACHE":
 // la Cache API tiene alcance de ORIGEN, no de ruta, y las dos PWAs viven en el mismo
 // cvenegas-sernageomin.github.io. Con el filtro viejo, activar esta app borraba la cache de
@@ -15,7 +15,7 @@ const esMia=k=>MIAS.some(re=>re.test(k));
 const ASSETS=['./','./index.html','./manifest.json','./guia_fields.js','./icons/icon-192.png','./icons/icon-512.png',
   './vendor/leaflet.css','./vendor/leaflet.js','./vendor/idb.js','./vendor/leaflet.offline.js',
   './vendor/georaster.browser.bundle.min.js','./vendor/georaster-layer-for-leaflet.min.js',
-  './vendor/sql-wasm.js','./vendor/sql-wasm.wasm','./vendor/jszip.js',
+  './vendor/sql-wasm.js','./vendor/sql-wasm.wasm','./vendor/jszip.js','./vendor/shp.js',
   './vendor/images/marker-icon.png','./vendor/images/marker-icon-2x.png','./vendor/images/marker-shadow.png',
   './vendor/images/layers.png','./vendor/images/layers-2x.png'];
 // vendor/gdal3.js + gdal3WebAssembly.{data,wasm} quedan FUERA de ASSETS a proposito: pesan
