@@ -1,5 +1,7 @@
 # PWA Geonotas Light — Captura simplificada
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23196802.svg)](https://doi.org/10.5281/zenodo.23196802)
+
 Variante simplificada de [PWA Geonotas](https://cvenegas-sernageomin.github.io/geonotas/) para
 captura de **geología básica en terreno** (modelo CDC SERNAGEOMIN). Mismo modelo, misma base de
 datos y mismos exports: **lo único que cambia es la capa de formulario**.
@@ -109,4 +111,4 @@ Las cartas geológicas y capas de referencia de SERNAGEOMIN conservan sus condic
 
 Cita sugerida:
 
-> SERNAGEOMIN / Venegas Benavides, C. (2026). PWA Geonotas Light: captura geológica simplificada [aplicación web]. https://cvenegas-sernageomin.github.io/geonotas-light/
+> SERNAGEOMIN / Venegas Benavides, C. (2026). PWA Geonotas Light: captura geológica simplificada [aplicación web]. https://cvenegas-sernageomin.github.io/geonotas-light/ · DOI: https://doi.org/10.5281/zenodo.23196802
