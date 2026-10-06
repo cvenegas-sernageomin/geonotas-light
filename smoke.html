@@ -1007,6 +1007,25 @@ async function correr(){
 
   } finally {
     await borrarMios(w);
+    await prueba('Si otra instancia cierra la base, el siguiente guardado la reabre (light-27)', async () => {
+      w.soltarDB();                                    // lo mismo que hace onversionchange
+      const id = P + 'reabre-1';
+      await w.put('nota', {id, _parent: P + 'pr', TEXTO: 'tras versionchange'});
+      try {
+        eq((await w.get('nota', id)).TEXTO, 'tras versionchange', 'el registro no se guardó tras soltar la conexión');
+        w.soltarDB();
+        await Promise.all([w.all('proyecto'), w.all('punto'), w.get('nota', id)]);
+      } finally { await w.del('nota', id); }
+      return 'put/get/all reabren la conexión cerrada';
+    });
+
+    await prueba('Manteo del botón de sensor: usa beta y gamma (light-27)', async () => {
+      const m = (b, g) => Math.round(w.manteoDeSensor(b, g));
+      eq([m(0, 0), m(35, 0), m(0, 35), m(-30, 0), m(30, 30)], [0, 35, 35, 30, 41], 'horizontal, adelante, costado, negativo, combinado');
+      eq(w.manteoDeSensor(null, 10), null, 'sin sensor');
+      return 'costado ya no da 0°';
+    });
+
     await prueba('No quedó basura ni se tocaron datos ajenos', async () => {
       for (const s of STORES_TODOS) eq((await w.all(s)).filter(mio).length, 0, 'quedaron registros smoke- en ' + s);
       const despues = await censo(w);
