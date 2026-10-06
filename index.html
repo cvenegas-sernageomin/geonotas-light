@@ -3551,7 +3551,7 @@ const MODELO = {
 </script>
 <script>
 "use strict";
-const APP_VER = 'light-28';   // se muestra en Proyectos; subir junto con el cache del SW
+const APP_VER = 'light-29';   // se muestra en Proyectos; subir junto con el cache del SW
 // ============================ Utilidades ============================
 const $ = s => document.querySelector(s);
 const el = (t,a={},...c)=>{const e=document.createElement(t);for(const k in a){if(k==='class')e.className=a[k];else if(k==='html')e.innerHTML=a[k];else if(k.startsWith('on'))e.addEventListener(k.slice(2),a[k]);else e.setAttribute(k,a[k]);}c.flat().forEach(x=>e.append(x&&x.nodeType?x:document.createTextNode(x==null?'':x)));return e;};
@@ -7012,10 +7012,82 @@ function avisoActualizacion(){
     el('button',{class:'btn sec mini','aria-label':'Más tarde',onclick:()=>b.remove()},'✕'));
   document.body.append(b);
 }
-$('#btnBack').addEventListener('click',()=>{
-  if(vista.n==='punto'){const p= curPunto&&curPunto._parent; nav({n:'proyecto',id:p});}
-  else if(vista.n==='proyecto') nav({n:'home'});
+// enEditor: #app muestra una pantalla que NO es la de `vista` (editar proyecto, nombres,
+// foto-mapa, exportar). Esas funciones pintan #app directo sin pasar por nav(); volver de ellas
+// es simplemente repintar la vista en que estaba el usuario.
+let enEditor=false;
+function volverVista(){
+  if(enEditor){ render(); return true; }
+  if(vista.n==='punto'){ const p=curPunto&&curPunto._parent; nav({n:'proyecto',id:p}); return true; }
+  // mapa y muestras son pestañas hermanas de 'proyecto' (Puntos): todas vuelven al inicio.
+  // Antes el ‹ en Mapa/Muestras no hacía nada.
+  if(vista.n!=='home'){ nav({n:'home'}); return true; }
+  return false;
+}
+$('#btnBack').addEventListener('click',volverVista);
+
+// ---- Botón atrás del teléfono (Android) ----
+// La PWA nunca escribía en el historial, así que el "atrás" de Android no tenía adónde volver
+// dentro de la app y la cerraba (pantalla negra), p.ej. desde la vista mapa. Ahora se mantiene
+// UNA entrada centinela mientras haya adónde volver; al consumirla se hace lo que haría el
+// usuario a mano -- cerrar lo que está encima (esquema, leyenda, diálogo) o, si no
+// hay nada, el ‹ -- y se vuelve a armar. En el inicio sin nada abierto no se arma: ahí "atrás"
+// sí debe salir de la app.
+// Una sola entrada y no una por pantalla: Chrome marca como "saltables" las entradas creadas sin
+// gesto del usuario, y con varias el atrás podía saltarse niveles. Con base+centinela, aunque la
+// salte, cae en la base del mismo documento y igual dispara popstate.
+let atrasArmado=false;
+function armarAtras(){
+  if(atrasArmado) return;
+  try{ history.pushState({geonotas:1},''); atrasArmado=true; }catch(e){}
+}
+// Lo que esté abierto encima de todo: cualquier hijo directo de <body> fijo a pantalla completa
+// (los overlays de la app se crean así: .sk-ov, .modal, leyenda de cartas, selector
+// de fotos...). Gana el de mayor z-index y, a igualdad, el último agregado.
+function overlayAbierto(){
+  let top=null, zTop=-Infinity;
+  for(const n of document.body.children){
+    if(n.id==='app'||n.id==='fab'||n.tagName==='HEADER'||n.tagName==='SCRIPT') continue;
+    const cs=getComputedStyle(n);
+    if(cs.position!=='fixed'||cs.display==='none'||cs.visibility==='hidden') continue;
+    if(n.offsetWidth<innerWidth*.9||n.offsetHeight<innerHeight*.9) continue;
+    const z=parseInt(cs.zIndex)||0;
+    if(z>=zTop){ zTop=z; top=n; }
+  }
+  return top;
+}
+function cerrarOverlay(ov){
+  if(ov.classList.contains('sk-ov')){ document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'})); return; }
+  const btn=ov.querySelector('.modal-close,.cg-leg-cerrar')
+    || [...ov.querySelectorAll('button')].find(b=>/^\s*(✕|×|✓ Listo|Listo|Cerrar|Cancelar)/.test(b.textContent));
+  if(btn){ btn.click(); return; }
+  if(ov.id) ov.style.display='none'; else ov.remove();
+}
+function hayAdondeVolver(){ return !!overlayAbierto() || enEditor || vista.n!=='home'; }
+// Al volver al inicio por la UI (el ‹, un botón) la centinela queda sobrando: se consume con
+// history.back() para que el siguiente "atrás" sí salga de la app, y ese popstate se ignora.
+let atrasConsumiendo=false;
+function soltarAtras(){
+  if(!atrasArmado || hayAdondeVolver()) return;
+  atrasArmado=false; atrasConsumiendo=true;
+  try{ history.back(); }catch(e){ atrasConsumiendo=false; }
+}
+addEventListener('popstate',()=>{
+  if(atrasConsumiendo){ atrasConsumiendo=false; return; }
+  atrasArmado=false;
+  const ov=overlayAbierto();
+  if(ov) cerrarOverlay(ov); else volverVista();
+  // después del repintado (render es async) se decide si queda algo adónde volver
+  setTimeout(()=>{ if(hayAdondeVolver()) armarAtras(); },120);
 });
+// Se arma al abrir cualquier cosa: pantallas (render), overlays agregados a <body> o diálogos
+// estáticos que pasan de display:none a visibles.
+// Solo cuentan los hijos directos de <body> (ahí viven los overlays y los diálogos estáticos):
+// mirar el subárbol entero dispararía con cada tesela de Leaflet.
+new MutationObserver(ms=>{
+  if(!ms.some(m=>m.target===document.body||m.target.parentNode===document.body)) return;
+  if(hayAdondeVolver()) armarAtras(); else soltarAtras();   // p.ej. cerró con × un diálogo abierto en el inicio
+}).observe(document.body,{childList:true, subtree:true, attributes:true, attributeFilter:['style','class']});
 
 let curProyecto=null, curPunto=null;
 
@@ -7024,6 +7096,7 @@ async function render(){
   // a la vista mapa, el primer toque abria la ficha de nota sin que nadie la pidiera.
   dibujando=false; agregandoPunto=false; agregandoNota=false; midiendo=false;
   if(vista.n!=='mapa') pararGPSLive();     // no seguir consumiendo GPS fuera de la vista mapa
+  enEditor=false;
   const app=$('#app'); app.innerHTML=''; $('#fab').innerHTML=''; $('#fab').className='fab';
   if(vista.n==='home') await renderHome(app);
   else if(vista.n==='proyecto') await renderProyecto(app);
@@ -7032,6 +7105,7 @@ async function render(){
   else if(vista.n==='punto') await renderPunto(app);
   updateFormReadonly();   // re-aplica el bloqueo: render() rehace #app desde cero
   ajustarCortina();       // la barra ya tiene sus botones: recien ahora se puede medir
+  if(hayAdondeVolver()) armarAtras(); else soltarAtras();
 }
 
 // ---- Cortina de la barra de acciones ----
@@ -7115,6 +7189,7 @@ function creditos(){
 }
 
 function editorProyecto(p){
+  enEditor=true; armarAtras();   // pantalla fuera de `vista`: el atrás repinta la vista (ver volverVista)
   const app=$('#app');app.innerHTML='';$('#fab').innerHTML='';
   const reg=p||{id:uid()};
   $('#ttl').textContent=p?'Editar proyecto':'Nuevo proyecto';$('#ctx').textContent='';
@@ -7136,6 +7211,7 @@ function namingCfg(pr){
 function fmtName(c){return c.prefix+String(c.next).padStart(c.pad||0,'0');}
 
 function editorNaming(pr){
+  enEditor=true; armarAtras();   // pantalla fuera de `vista`: el atrás repinta la vista (ver volverVista)
   const app=$('#app');app.innerHTML='';$('#fab').innerHTML='';$('#btnBack').style.display='';
   $('#ttl').textContent='Convención de nombres';$('#ctx').textContent=pr.NOMBRE_PROYECTO||'';
   const cfg=namingCfg(pr);
@@ -7826,6 +7902,7 @@ async function borrarFotomapaArbol(nodeId){for(const h of await fotomapaHijos(no
 async function rutaFotomapa(node){const p=[];let n=node;while(n){p.unshift(n);n=n._parent?await get('fotomapa',n._parent):null;}return p;}
 
 async function editorFotomapa(node){
+  enEditor=true; armarAtras();   // pantalla fuera de `vista`: el atrás repinta la vista (ver volverVista)
   curFM=node;
   const app=$('#app');app.innerHTML='';$('#fab').innerHTML='';$('#btnBack').style.display='';
   $('#ttl').textContent='Foto-mapa'; $('#ctx').textContent=curProyecto.NOMBRE_PROYECTO||'';
@@ -8482,6 +8559,7 @@ function tomarGPS(f,btn){
 
 // ============================ Exportación ============================
 async function exportMenu(proyectoId){
+  enEditor=true; armarAtras();   // pantalla fuera de `vista`: el atrás repinta la vista (ver volverVista)
   const app=$('#app');app.innerHTML='';$('#fab').innerHTML='';$('#btnBack').style.display='';
   const pr = proyectoId ? await get('proyecto',proyectoId) : null;
   $('#ttl').textContent='Exportar datos';$('#ctx').textContent=pr?('Solo: '+(pr.NOMBRE_PROYECTO||pr.id)):'';
