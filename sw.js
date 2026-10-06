@@ -2,7 +2,7 @@
 // Regla: el nombre del cache es "geonotas-" seguido del APP_VER de index.html
 // (el de esta app ya trae el "light-" adentro). Antes habia una "v" de mas que rompia
 // esa correspondencia; no lo notaba nadie porque la light no tenia prueba de humo.
-const CACHE='geonotas-light-27';
+const CACHE='geonotas-light-28';
 // Caches que ESTA app puede purgar al activarse. NO se borra "todo lo que no sea CACHE":
 // la Cache API tiene alcance de ORIGEN, no de ruta, y las dos PWAs viven en el mismo
 // cvenegas-sernageomin.github.io. Con el filtro viejo, activar esta app borraba la cache de
@@ -31,8 +31,16 @@ const ASSETS=['./','./index.html','./manifest.json','./guia_fields.js','./icons/
 // El modelo (~78 MB) no pasa por aca: vive en otro path del dominio, fuera del scope de este
 // SW, y lo administra Transformers.js en la Cache API (con alcance de ORIGEN, asi que se
 // comparte con las demas PWAs).
+// gdal3 (~39 MB, exportar GDB) en su PROPIA caché: hasta light-27 quedaba en CACHE y se borraba
+// con cada versión nueva, así que el teléfono la volvía a bajar entera tras cada actualización (y
+// sin señal la GDB dejaba de funcionar). Esta caché no calza con MIAS de ninguna de las dos apps;
+// al cambiar los archivos de vendor/gdal3* hay que subir el sufijo -vN, y activate borra las
+// versiones viejas de ESTE prefijo.
+const GDAL_CACHE='geonotas-light-gdal-v1';
+const esGdalCache=k=>/^geonotas-light-gdal-v\d+$/.test(k);
+const esGdal=u=>/\/vendor\/gdal3[^/]*$/.test(u.pathname);
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&esMia(k)).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>(k!==CACHE&&esMia(k))||(k!==GDAL_CACHE&&esGdalCache(k))).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;
   const req=e.request;
   // Cross-origin (tiles satelitales/topo de Esri y OpenTopoMap, export de ArcGIS): NO se
@@ -47,6 +55,11 @@ self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;
     // siempre y la app seguía rota offline hasta la próxima versión de CACHE.
     e.respondWith(fetch(req).then(resp=>{if(resp.ok){const cp=resp.clone();caches.open(CACHE).then(c=>c.put(req,cp));}return resp;})
       .catch(()=>caches.match(req).then(r=>r||caches.match('./index.html'))));
+    return;
+  }
+  if(esGdal(u)){
+    e.respondWith(caches.open(GDAL_CACHE).then(c=>c.match(req).then(r=>r||fetch(req).then(resp=>{
+      if(resp.ok){const cp=resp.clone();c.put(req,cp);}return resp;}))));
     return;
   }
   // cache-first para assets. Sin fallback a index.html: devolver el HTML cuando falla una
