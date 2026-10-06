@@ -3551,7 +3551,7 @@ const MODELO = {
 </script>
 <script>
 "use strict";
-const APP_VER = 'light-25';   // se muestra en Proyectos; subir junto con el cache del SW
+const APP_VER = 'light-26';   // se muestra en Proyectos; subir junto con el cache del SW
 // ============================ Utilidades ============================
 const $ = s => document.querySelector(s);
 const el = (t,a={},...c)=>{const e=document.createElement(t);for(const k in a){if(k==='class')e.className=a[k];else if(k==='html')e.innerHTML=a[k];else if(k.startsWith('on'))e.addEventListener(k.slice(2),a[k]);else e.setAttribute(k,a[k]);}c.flat().forEach(x=>e.append(x&&x.nodeType?x:document.createTextNode(x==null?'':x)));return e;};
@@ -3646,9 +3646,9 @@ function nombreArchivoProyecto(proyecto){return (proyecto&&proyecto.NOMBRE_PROYE
 // ============================ IndexedDB ============================
 const DB='captura-terreno', VER=14;   // v13: + store 'cartageo'; v14: + store 'mapaprop' (mapas raster propios). Ninguno es del modelo canónico.
 let db;
-function openDB(){return new Promise((res,rej)=>{
+function openDB(nombre=DB,ver=VER){return new Promise((res,rej)=>{
   let done=false; const finish=(fn,v)=>{if(!done){done=true;fn(v);}};
-  const r=indexedDB.open(DB,VER);
+  const r=indexedDB.open(nombre,ver);
   r.onupgradeneeded=()=>{const d=r.result;
     const yaTeniaAflora=d.objectStoreNames.contains('aflora');
     STORES.concat(['fotomapa','linea','nota']).forEach(s=>{if(!d.objectStoreNames.contains(s)){const os=d.createObjectStore(s,{keyPath:'id'});
@@ -3811,7 +3811,25 @@ function openDB(){return new Promise((res,rej)=>{
   r.onsuccess=()=>{db=r.result;
     db.onversionchange=()=>{try{db.close();}catch(e){}};   // libera para que otra instancia pueda actualizar
     finish(res,db);};
-  r.onerror=()=>finish(rej,r.error||new Error('IndexedDB error'));
+  // Base MAS NUEVA que este codigo: las dos PWAs (completa y light) comparten 'captura-terreno'
+  // en el mismo origen y sus service workers se actualizan por separado. Si la otra ya subio
+  // VER, open(DB,VER) muere con VersionError y esta app no abria nunca mas (paso de verdad:
+  // la completa quedo en 15 en v130 y la light siguio pidiendo 14). Una version nueva solo
+  // AGREGA stores, asi que se abre la base tal como esta, sin pedir version ni migrar.
+  r.onerror=ev=>{
+    const e=r.error;
+    if(e&&e.name==='VersionError'){
+      if(ev&&ev.preventDefault) ev.preventDefault();
+      const r2=indexedDB.open(nombre);
+      r2.onsuccess=()=>{db=r2.result;
+        db.onversionchange=()=>{try{db.close();}catch(x){}};
+        console.warn('IndexedDB: la base esta en v'+db.version+' y este codigo en v'+ver+'; se abre sin migrar');
+        finish(res,db);};
+      r2.onerror=()=>finish(rej,r2.error||e);
+      return;
+    }
+    finish(rej,e||new Error('IndexedDB error'));
+  };
   r.onblocked=()=>finish(rej,new Error('BLOCKED'));         // otra pestaña/instancia tiene la BD abierta
   setTimeout(()=>finish(rej,new Error('TIMEOUT')),6000);    // no colgar la app indefinidamente
 });}

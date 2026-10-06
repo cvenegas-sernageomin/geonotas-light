@@ -985,6 +985,26 @@ async function correr(){
       eq(a.getAttribute('href'), 'https://andeangeology.cl/a?x=1&y=2', 'la URL se rompió al escapar');
       return 'sin inyección, con aviso de confianza y enlaces seguros';
     });
+    await prueba('openDB abre una base que la otra app ya subió de versión (sin VersionError)', async () => {
+      // Completa y light comparten 'captura-terreno'. Si una sube VER, la otra pedía la versión
+      // vieja y moría con VersionError (pasó: completa en 15 desde v130, light en 14).
+      const nom = P + 'dbver', dbReal = w.eval('db');
+      await new Promise((res, rej) => { const r = w.indexedDB.open(nom, 5);
+        r.onupgradeneeded = () => r.result.createObjectStore('x');
+        r.onsuccess = () => { r.result.close(); res(); }; r.onerror = () => rej(r.error); });
+      let d;
+      try {
+        d = await w.openDB(nom, 2);
+        eq(d.version, 5, 'debía abrir la base en su versión real');
+        ok(d.objectStoreNames.contains('x'), 'la base abierta no trae sus stores');
+      } finally {
+        w.__d = dbReal; w.eval('db = window.__d'); delete w.__d;
+        if (d) d.close();
+        await new Promise(r => { const q = w.indexedDB.deleteDatabase(nom); q.onsuccess = q.onerror = q.onblocked = r; });
+      }
+      return 'pidió v2, abrió la v5 tal cual, sin migrar';
+    });
+
   } finally {
     await borrarMios(w);
     await prueba('No quedó basura ni se tocaron datos ajenos', async () => {
