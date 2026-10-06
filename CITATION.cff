@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "Si usa este trabajo, cítelo como se indica abajo."
+title: "PWA Geonotas Light: captura geológica simplificada"
+type: software
+authors:
+  - name: "Servicio Nacional de Geología y Minería (SERNAGEOMIN)"
+  - family-names: "Venegas Benavides"
+    given-names: "Carlos"
+    affiliation: "Servicio Nacional de Geología y Minería (SERNAGEOMIN)"
+date-released: 2026-10-06
+license: CC-BY-NC-4.0
+url: "https://cvenegas-sernageomin.github.io/geonotas-light/"
+repository-code: "https://github.com/cvenegas-sernageomin/geonotas-light"
+keywords:
+  - "geología de campo"
+  - "captura de datos"
+  - "PWA"
+  - "offline"
+  - "SERNAGEOMIN"
